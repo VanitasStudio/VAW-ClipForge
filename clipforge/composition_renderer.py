@@ -8,6 +8,7 @@ from datetime import datetime
 from pathlib import Path
 
 from clipforge.clip_engine import FFMPEG
+from clipforge.local_performance import video_encoder_args, video_encoder_label
 from clipforge.clipforge_contracts import AnalysisBundle, EditDecisionList, dumps_contract, validate_edl
 from clipforge.silent_process import run as silent_run
 from clipforge.smart_reframe import export_v04
@@ -103,8 +104,7 @@ def _burn_ass(video: Path, ass_path: Path, output: Path, log) -> None:
     command = [
         FFMPEG, "-hide_banner", "-loglevel", "error", "-y",
         "-i", str(video), "-vf", f"ass='{filter_path}'",
-        "-c:v", "libx264", "-preset", "veryfast", "-crf", "19",
-        "-pix_fmt", "yuv420p", "-c:a", "copy",
+        *video_encoder_args(FFMPEG,19), "-c:a", "copy",
         "-movflags", "+faststart", str(output),
     ]
     result = silent_run(command, capture_output=True, text=True, timeout=900)
@@ -227,10 +227,7 @@ def _concat_segments(
     ]
     if has_audio:
         command.extend(["-map", "[aout]" if len(audio_labels) > 1 else "[a_joined]"])
-    command.extend([
-        "-c:v", "libx264", "-preset", "veryfast", "-crf", "19",
-        "-pix_fmt", "yuv420p",
-    ])
+    command.extend(video_encoder_args(FFMPEG,19))
     if has_audio:
         command.extend(["-c:a", "aac", "-b:a", "160k"])
     command.extend(["-movflags", "+faststart", str(output)])
@@ -299,6 +296,7 @@ def render_composition(
             "editorial_rank": index,
         })
 
+    log(f"Video encoder: {video_encoder_label(FFMPEG)}.")
     log(f"Rendering {edl.title}: {len(picks)} complete segments, {edl.duration_seconds:.1f}s total.")
     with tempfile.TemporaryDirectory(prefix="vaw-story-render-", dir=str(output.parent)) as temporary:
         work = Path(temporary)

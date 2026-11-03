@@ -64,16 +64,61 @@ def srt_from_groups(groups):
     return "\n".join(lines)+("\n" if lines else "")
 
 _model_cache={}
-def get_model(size="base",log=print):
+_active_whisper_profile=None
+
+def get_model(size="base",log=print,force_cpu=False):
+    """Load a local Whisper model using the best available hardware backend."""
+    global _active_whisper_profile
     if size not in WHISPER_MODELS:
         raise ValueError("Whisper size must be tiny, base, or small")
-    if size not in _model_cache:
+    if force_cpu:
+        from clipforge.local_performance import detect_local_performance
+        _active_whisper_profile=detect_local_performance("cpu")
+    elif _active_whisper_profile is None:
+        from clipforge.local_performance import detect_local_performance, profile_summary
+        _active_whisper_profile=detect_local_performance()
+        log(profile_summary(_active_whisper_profile))
+
+    profile=_active_whisper_profile
+    key=(size,profile.device,profile.compute_type)
+    if key not in _model_cache:
         from faster_whisper import WhisperModel
         MODEL_HOME.mkdir(parents=True,exist_ok=True)
-        log(f"Loading Whisper '{size}' locally (first run may download model)...")
-        _model_cache[size]=WhisperModel(size,device="cpu",compute_type="int8",
-                                        download_root=str(MODEL_HOME))
-    return _model_cache[size]
+        log(f"Loading Whisper '{size}' on {profile.device.upper()} ({profile.compute_type})...")
+        options={
+            "device":profile.device,
+            "compute_type":profile.compute_type,
+            "download_root":str(MODEL_HOME),
+            "cpu_threads":profile.cpu_threads,
+            "num_workers":profile.num_workers,
+        }
+        try:
+            _model_cache[key]=WhisperModel(size,**options)
+        except Exception as exc:
+            if profile.device!="cuda":
+                raise
+            # CUDA can be visible while its cuDNN/cuBLAS runtime is incomplete.
+            # Retry once on CPU and keep the app usable instead of failing analysis.
+            log(f"GPU initialization unavailable ({type(exc).__name__}); switching to optimized CPU mode.")
+            from dataclasses import replace
+            cpu_profile=replace(
+                profile,device="cpu",compute_type="int8",cuda_devices=0,
+                reason="CUDA initialization failed; CPU fallback active.",
+            )
+            _active_whisper_profile=cpu_profile
+            key=(size,"cpu","int8")
+            _model_cache[key]=WhisperModel(
+                size,device="cpu",compute_type="int8",
+                download_root=str(MODEL_HOME),cpu_threads=cpu_profile.cpu_threads,
+                num_workers=cpu_profile.num_workers,
+            )
+            log(f"Whisper CPU fallback ready: {cpu_profile.cpu_threads} threads.")
+        else:
+            log(f"Whisper '{size}' ready on {profile.device.upper()}.")
+    return _model_cache[key]
+
+def get_active_whisper_profile():
+    return _active_whisper_profile
 
 def transcribe_clip(clip:Path,size="base",log=print):
     # PyAV 19 removed metadata_errors argument while faster-whisper 1.2.1 still

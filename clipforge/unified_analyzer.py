@@ -192,7 +192,11 @@ def analyze_source(
     path = Path(source).resolve()
     cache = Path(cache_dir).resolve()
     cache.mkdir(parents=True, exist_ok=True)
+    from time import perf_counter
+    probe_started = perf_counter()
+    log("Reading local source metadata and validating media streams...")
     media = probe_source(path)
+    log(f"Source ready: {media.width}x{media.height}, {media.duration_seconds/60:.1f} min in {perf_counter()-probe_started:.1f}s.")
     warnings: list[str] = []
     vision_result = None
     if vision_enabled is None:
@@ -236,6 +240,7 @@ def analyze_source(
 
     if context_aware:
         try:
+            log("Stage 1/3: analyzing speech boundaries locally...")
             from clipforge.smart_duration import analyze_boundaries
             transcript_rows = analyze_boundaries(
                 path, cache, model_size=duration_model, log=log
@@ -246,6 +251,7 @@ def analyze_source(
 
     if include_scenes:
         try:
+            log("Stage 2/3: scanning visual scene transitions...")
             from clipforge.smart_reframe import shot_boundaries
             scene_cuts = shot_boundaries(path, log=log)
         except Exception as exc:
@@ -253,6 +259,7 @@ def analyze_source(
             log(f"Scene detection skipped: {type(exc).__name__}: {str(exc)[:160]}")
 
     try:
+        log("Stage 3/3: ranking editorial moments and building story candidates...")
         from clipforge.gemini_highlights import process_ai
         result = process_ai(
             path,

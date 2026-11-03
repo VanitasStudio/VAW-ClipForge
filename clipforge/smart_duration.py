@@ -64,6 +64,40 @@ def _build_sentences(words: list[dict]) -> list[dict]:
     flush()
     return [s for s in spans if s["end"] > s["start"]]
 
+def _collect_transcript_words(segments, log, started):
+    from time import perf_counter
+    words = []
+    segment_count = 0
+    for segment in segments:
+        segment_count += 1
+        if segment_count == 1 or segment_count % 30 == 0:
+            elapsed = max(0.1, perf_counter() - started)
+            log(f"Transcription progress: {segment_count} speech segments in {elapsed:.0f}s...")
+        segment_words = getattr(segment, "words", None) or []
+        if segment_words:
+            for item in segment_words:
+                try:
+                    start, end = float(item.start), float(item.end)
+                    text = str(item.word).strip()
+                except (TypeError, ValueError, AttributeError):
+                    continue
+                if text and end > start:
+                    words.append({"start": start, "end": end, "text": text})
+        else:
+            text = str(getattr(segment, "text", "")).strip()
+            tokens = text.split()
+            start = float(segment.start)
+            end = float(segment.end)
+            if tokens and end > start:
+                step = (end - start) / len(tokens)
+                words.extend({
+                    "start": start + i * step,
+                    "end": start + (i + 1) * step,
+                    "text": token,
+                } for i, token in enumerate(tokens))
+    return words, segment_count
+
+
 def analyze_boundaries(source, cache_dir, model_size="base", log=print):
     """Transcribe a source locally and cache sentence-level boundary candidates."""
     source = Path(source).resolve()
@@ -89,38 +123,33 @@ def analyze_boundaries(source, cache_dir, model_size="base", log=print):
             pass
 
     _patch_av_compat()
+    from time import perf_counter
     from clipforge.auto_captions import get_model
     model = get_model(model_size, log)
-    log("Context analysis: transcribing source locally to find complete sentence boundaries...")
-    segments, info = model.transcribe(
-        str(source), beam_size=1, best_of=1, word_timestamps=True,
-        vad_filter=True, condition_on_previous_text=False,
-    )
-    words = []
-    for segment in segments:
-        segment_words = getattr(segment, "words", None) or []
-        if segment_words:
-            for item in segment_words:
-                try:
-                    start, end = float(item.start), float(item.end)
-                    text = str(item.word).strip()
-                except (TypeError, ValueError, AttributeError):
-                    continue
-                if text and end > start:
-                    words.append({"start": start, "end": end, "text": text})
-        else:
-            text = str(getattr(segment, "text", "")).strip()
-            tokens = text.split()
-            start = float(segment.start)
-            end = float(segment.end)
-            if tokens and end > start:
-                step = (end - start) / len(tokens)
-                words.extend({
-                    "start": start + i * step,
-                    "end": start + (i + 1) * step,
-                    "text": token,
-                } for i, token in enumerate(tokens))
+    started = perf_counter()
+    log("Context analysis: local speech transcription is starting...")
+    try:
+        segments, info = model.transcribe(
+            str(source), beam_size=1, best_of=1, word_timestamps=True,
+            vad_filter=True, condition_on_previous_text=False,
+        )
+        words, segment_count = _collect_transcript_words(segments, log, started)
+    except Exception as exc:
+        from clipforge.auto_captions import get_model, get_active_whisper_profile
+        active_profile = get_active_whisper_profile()
+        if not active_profile or active_profile.device != "cuda":
+            raise
+        log(f"CUDA inference failed ({type(exc).__name__}); retrying locally on CPU.")
+        model = get_model(model_size, log, force_cpu=True)
+        started = perf_counter()
+        segments, info = model.transcribe(
+            str(source), beam_size=1, best_of=1, word_timestamps=True,
+            vad_filter=True, condition_on_previous_text=False,
+        )
+        words, segment_count = _collect_transcript_words(segments, log, started)
 
+    elapsed = max(0.0, perf_counter() - started)
+    log(f"Local transcription complete: {segment_count} segments, {len(words)} words in {elapsed:.1f}s.")
     if not words:
         raise RuntimeError("Whisper could not produce word timestamps for boundary analysis.")
     sentences = _build_sentences(words)

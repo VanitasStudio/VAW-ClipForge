@@ -16,8 +16,9 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-from scenedetect import detect, ContentDetector
+from scenedetect import ContentDetector, SceneManager, open_video
 from clipforge.clip_engine import FFMPEG, filter_graph, probe_duration, OUTPUT_SIZES
+from clipforge.local_performance import video_encoder_args
 from clipforge.stylish_captions import polish_clip
 
 SIZE=(720,1280)
@@ -26,22 +27,40 @@ FACE_CASCADE=cv2.CascadeClassifier(cv2.data.haarcascades+"haarcascade_frontalfac
 def extract_local_segment(source,start,seconds,target,log=print):
     cmd=[FFMPEG,"-hide_banner","-loglevel","error","-y",
          "-ss",f"{start:.3f}","-i",str(source),"-t",f"{seconds:.3f}",
-         "-c:v","libx264","-preset","veryfast","-crf","20",
+         *video_encoder_args(FFMPEG,20),
          "-c:a","aac","-b:a","128k","-movflags","+faststart",str(target)]
     p=silent_run(cmd,capture_output=True,text=True,timeout=420)
     if p.returncode:
         raise RuntimeError("Could not prepare source clip: "+p.stderr[-350:])
 
 def shot_boundaries(segment,log=print):
+    """Detect scene cuts efficiently while retaining useful cut precision."""
+    video=None
     try:
-        scenes=detect(str(segment),ContentDetector(threshold=29,min_scene_len=12),
-                      show_progress=False)
+        from time import perf_counter
+        from clipforge.local_performance import detect_local_performance
+        profile=detect_local_performance()
+        cv2.setNumThreads(profile.opencv_threads)
+        started=perf_counter()
+        video=open_video(str(segment),backend="opencv")
+        manager=SceneManager()
+        manager.add_detector(ContentDetector(threshold=29,min_scene_len=12))
+        # 15 fps sampling is sufficient for editorial cut boundaries and halves
+        # decode work compared with scanning every frame of a 30 fps source.
+        processed=manager.detect_scenes(video,frame_skip=1,show_progress=False)
+        scenes=manager.get_scene_list()
         cuts=[float(scene[0].get_seconds()) for scene in scenes][1:]
-        log(f"Detected {len(cuts)} visual scene transitions.")
+        log(f"Scene analysis ready: {len(cuts)} cuts from {processed} sampled frames in {perf_counter()-started:.1f}s.")
         return cuts
     except Exception as exc:
         log(f"Scene detector unavailable ({type(exc).__name__}); tracking without cuts.")
         return []
+    finally:
+        if video is not None:
+            try:
+                video.close()
+            except Exception:
+                pass
 
 def frame_centers(segment,cut_times,log=print,subject_mode="universal"):
     cap=cv2.VideoCapture(str(segment))
@@ -205,7 +224,7 @@ def smart_render(segment,output,auto=True,scenes=True,layout="blur",
             meta["mode"]="scene-aware-"+subject_mode
     output.parent.mkdir(parents=True,exist_ok=True)
     cmd=[FFMPEG,"-hide_banner","-loglevel","error","-y","-i",str(segment),
-         "-vf",vf,"-r","30","-c:v","libx264","-preset","veryfast","-crf","22",
+         "-vf",vf,"-r","30",*video_encoder_args(FFMPEG,22),
          "-c:a","aac","-b:a","128k","-movflags","+faststart",str(output)]
     p=silent_run(cmd,cwd=str(output.parent),capture_output=True,text=True,timeout=600)
     if p.returncode:

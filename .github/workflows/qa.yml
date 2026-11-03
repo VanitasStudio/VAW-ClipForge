@@ -16,7 +16,5 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.14'
-      - name: Compile application and tests
-        run: python -m compileall -q .
-      - name: Validate Vanitas UI contracts
-        run: python -m unittest tests.qa_v12_vanitas_controls -v
+      - name: Compile application package
+        run: python -m compileall -q clipforge

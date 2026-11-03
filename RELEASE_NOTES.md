@@ -1,4 +1,12 @@
-# VAW ClipForge v1.2.1 ? Vanitas Studio Identity & Controls
+# VAW ClipForge v1.2.1 — Vanitas Studio Identity, Controls & Local Performance
+
+## Local performance
+- Added hardware-aware Whisper backend selection with CUDA 12 / cuDNN 9 runtime validation and automatic CPU `int8` fallback.
+- Added bounded CPU thread allocation for responsive desktop use on 6-core / 12-thread systems.
+- Added real FFmpeg NVENC capability probing and NVIDIA hardware encoding for Story Composer segment renders, final composition encoding and subtitle burn-in.
+- Reduced scene-detection decode work by sampling every other frame while preserving editorial scene-cut detection.
+- Added visible analysis-stage, transcription-progress, elapsed-time and encoder diagnostics.
+- Added `docs/LOCAL_PERFORMANCE.md` with the runtime policy and PC-VAWRIEL hardware findings.
 
 ## Brand system
 - Replaced the Porto Web orange accent with the master Vanitas Studio logo palette: obsidian, midnight navy, metallic silver, electric cobalt and ionic blue.

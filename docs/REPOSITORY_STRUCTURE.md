@@ -1,30 +1,35 @@
 # Repository structure
 
-    VAW-ClipForge/
-    ??? clipforge/              Application package and runtime modules
-    ??? assets/                 Brand assets, fonts, icons and bundled resources
-    ??? docs/                   Product, architecture and release documentation
-    ?   ??? archive/releases/   Historical release notes
-    ??? scripts/                Build, QA and setup automation
-    ??? tests/                  Automated tests and QA fixtures
-    ??? tools/
-    ?   ??? diagnostics/        Maintainer diagnostics
-    ?   ??? legacy_patches/     Historical one-off migration scripts (not runtime)
-    ??? .github/                GitHub workflows and templates
-    ??? main.py                 Thin application entry point
-    ??? START_CLIPFORGE.cmd     Windows launcher for packaged executable
-    ??? START_REVIEW_STUDIO.cmd Windows Review Studio launcher
+The public repository contains the application package, product assets, documentation and GitHub project metadata. Generated binaries, local model caches, temporary media, one-off patches and maintainer-only test fixtures are kept outside the public source tree.
+
+```text
+VAW-ClipForge/
+├── .github/              GitHub workflows and contribution templates
+├── assets/               Product identity, fonts, icons and bundled resources
+├── clipforge/            Application package and runtime modules
+├── docs/                 Product, architecture, security and release documentation
+├── .gitattributes        Text and line-ending policy
+├── .gitignore            Generated and local-only file exclusions
+├── CONTRIBUTING.md       Contribution guidelines
+├── README.md             Product overview and user documentation
+├── RELEASE_NOTES.md      Latest release notes
+└── SECURITY.md           Security reporting policy
+```
 
 ## Import policy
 
-Runtime modules are imported through the clipforge package (for example,
-from clipforge.clip_engine import probe_duration). Tests use the same public
-package path. New runtime modules belong in clipforge/; do not add application
-modules to the repository root.
+Runtime code belongs in `clipforge/` and should use package-qualified imports, for example:
 
-## Build policy
+```python
+from clipforge.clip_engine import probe_duration
+```
 
-scripts/build_windows.ps1 packages main.py with PyInstaller. Static package
-imports are preferred; explicit hidden imports use fully-qualified clipforge.*
-names. Bundled assets remain at the repository/bundle root and are resolved
-independently of the Python package location.
+Do not place application modules in the repository root. Keep temporary scripts, local model files, exported media, build output and historical patch utilities out of version control.
+
+## Release artifacts
+
+The Windows desktop executable is a generated release artifact and is not committed to the source repository. Attach the packaged executable to the corresponding GitHub Release. Keep release notes current and avoid committing build output or user-specific configuration.
+
+## GitHub validation
+
+The GitHub Actions workflow performs static Python compilation checks on the application package for pushes and pull requests. Full runtime, UI and video-rendering validation is performed on the Windows maintainer machine before a desktop release.

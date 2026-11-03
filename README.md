@@ -11,19 +11,7 @@ See docs/VANITAS_BRAND_UI.md for the full tokens and UI rules.
 
 ## Windows desktop application
 
-End users should launch dist/VAW-ClipForge.exe. The application is packaged as a single-file,
-windowed Windows executable with the Vanitas app icon and bundled fonts. No Python installation
-or CMD launcher is required to start the packaged app.
-
-Build or rebuild on Windows with:
-
-~~~powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\build_windows.ps1 -Clean
-~~~
-
-The resulting executable is written to dist/VAW-ClipForge.exe. First-time speech-model use may
-download the selected Whisper model into the user's Hugging Face cache. The Gemini key remains
-protected with Windows DPAPI under the current Windows account.
+The Windows app is packaged as a single-file, windowed executable with the Vanitas app icon and bundled fonts. Build binaries are kept out of the source tree to keep the repository lightweight; attach the executable to a GitHub Release when publishing a desktop version. First-time speech-model use may download the selected Whisper model into the user's Hugging Face cache. The Gemini key remains protected with Windows DPAPI under the current Windows account.
 
 ## v1.2 production outputs
 
@@ -47,19 +35,15 @@ Video Vision MCP (OAMaestro/video-vision-mcp) is an optional local frame-extract
 
 ### Install the optional provider
 
-Requires Git and Node.js 20.9 or newer. From the ClipForge project folder, run once:
-
-~~~powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\setup_video_vision_mcp.ps1
-~~~
-
-The installer checks out a pinned MIT-licensed upstream revision, applies semver-safe dependency updates, audits the production dependency tree and builds the MCP server locally. The README's npm package name is not currently available from the npm registry, so ClipForge installs from the pinned GitHub source instead.
-
-The desktop checkbox is off by default. The programmatic analyzer can opt in with:
+The optional provider is maintained separately from the desktop source package. It is disabled by default; the programmatic analyzer can opt in with:
 
 ~~~powershell
 $env:CLIPFORGE_VIDEO_VISION_ENABLED = "1"
 ~~~
+
+## Local Performance Engine
+
+ClipForge profiles the local machine before processing. Whisper uses CUDA only when the full CUDA 12 / cuDNN 9 runtime is available, then falls back automatically to bounded CPU `int8` inference if GPU execution is unavailable. Scene detection uses a reduced sampling rate to avoid decoding every frame, and Story Composer rendering, segment preparation and subtitle burn-in use NVIDIA NVENC when the installed FFmpeg passes a real encoder probe. Otherwise, ClipForge uses the software `libx264` encoder. Processing remains local-first; see [Local Performance](docs/LOCAL_PERFORMANCE.md) for runtime behavior and diagnostics.
 
 ## Review Studio
 
@@ -92,15 +76,12 @@ Every export run creates one **Title and Hashtag Suggestion.md** file in the exp
 
 ## Repository layout
 
-Application source lives in the clipforge/ Python package. The repository root contains only project metadata, documentation, and the thin main.py entry point. QA tests are grouped in tests/, product documentation in docs/, build and maintainer scripts in scripts/, and diagnostics or historical migration utilities in tools/.
+- `clipforge/` — application modules and processing engines.
+- `assets/` — bundled product identity, fonts and runtime assets.
+- `docs/` — product, architecture, security and performance documentation.
+- `.github/` — issue templates, pull-request template and static validation workflow.
 
-Run the supported regression suite:
-
-~~~powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\run_qa.ps1
-~~~
-
-See docs/REPOSITORY_STRUCTURE.md for the full layout and RELEASE_NOTES.md for the latest changes. Historical release notes are archived under docs/archive/releases/.
+Generated binaries, local model caches, development utilities and historical patch scripts are intentionally excluded from the public source tree. See `docs/REPOSITORY_STRUCTURE.md` and `RELEASE_NOTES.md` for project documentation.
 
 ## Privacy and safety
 
@@ -111,6 +92,6 @@ See docs/REPOSITORY_STRUCTURE.md for the full layout and RELEASE_NOTES.md for th
 - If the optional provider is missing or fails, ClipForge falls back to its built-in local frame sampler.
 - No automatic publishing. Use only content you own or have permission to repurpose.
 
-## QA
+## Validation
 
-The v1.2 QA suite covers EDL contracts, unified analysis, Story Composer ordering and dependency validation, MCP transport and frame extraction, visual cache/quality/fusion, composition rendering and Review Studio round-tripping. v1.1 UI and GUI smoke tests remain part of the regression gate.
+GitHub Actions runs Python bytecode compilation against the application package on pushes and pull requests. Maintainer-only runtime and rendering checks are performed on Windows before publishing a desktop build.
