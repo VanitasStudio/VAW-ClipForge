@@ -11,6 +11,7 @@ import threading
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, simpledialog, ttk
+from vanitas_widgets import VanitasCombo
 
 from clip_engine import process as process_local
 from gemini_highlights import process_ai, MODEL
@@ -147,7 +148,9 @@ class ClipForge:
         scroll_area=tk.Frame(shell,bg=C["bg"])
         scroll_area.pack(fill="both",expand=True)
         canvas=tk.Canvas(scroll_area,bg=C["bg"],highlightthickness=0,bd=0)
-        scrollbar=ttk.Scrollbar(scroll_area,orient="vertical",command=canvas.yview)
+        scrollbar=tk.Scrollbar(scroll_area,orient="vertical",command=canvas.yview,
+            bg=C["raised"],troughcolor=C["bg"],activebackground=C["blue"],
+            highlightthickness=0,bd=0,relief="flat")
         canvas.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side="right",fill="y")
         canvas.pack(side="left",fill="both",expand=True)
@@ -178,7 +181,7 @@ class ClipForge:
         sourcebar=tk.Frame(source,bg=C["card"])
         sourcebar.pack(fill="x",pady=(0,8))
         label(sourcebar,"INPUT TYPE",9,"muted",True).pack(side="left",padx=(0,10))
-        self.source_switch=ttk.Combobox(sourcebar,textvariable=self.source_type,
+        self.source_switch=VanitasCombo(sourcebar,textvariable=self.source_type,
             state="readonly",values=["Local File","Video URL"],width=16)
         self.source_switch.pack(side="left")
         self.source_switch.bind("<<ComboboxSelected>>",self.switch_source)
@@ -217,7 +220,7 @@ class ClipForge:
                     relief="flat",bd=0,font=("Archivo",11),
                     highlightthickness=1,highlightbackground=C["line"])
             else:
-                widget=ttk.Combobox(box,textvariable=var,state="readonly",
+                widget=VanitasCombo(box,textvariable=var,state="readonly",
                                     values=opts[0],width=11)
             widget.pack(anchor="w",fill="x",ipady=3)
 
@@ -254,10 +257,10 @@ class ClipForge:
         ai.grid_columnconfigure(1,weight=1)
         label(ai,"DETECTION MODE",9,"muted",True).grid(row=0,column=0,sticky="w",pady=(0,6))
         label(ai,"GEMINI MODEL",9,"muted",True).grid(row=0,column=1,sticky="w",padx=(15,0),pady=(0,6))
-        ttk.Combobox(ai,textvariable=self.mode,state="readonly",width=27,
+        VanitasCombo(ai,textvariable=self.mode,state="readonly",width=27,
             values=["Gemini AI (audio)","Audio Activity (offline)"]).grid(
                 row=1,column=0,sticky="ew",padx=(0,10))
-        self.model_combo=ttk.Combobox(ai,textvariable=self.model,state="normal",
+        self.model_combo=VanitasCombo(ai,textvariable=self.model,state="normal",
             values=["gemini-3.6-flash","gemini-3.5-flash-lite",
                     "gemini-3.8-flash","gemini-3.7-flash",
                     "gemini-3.1-flash-lite","gemini-2.5-flash"])
@@ -294,7 +297,7 @@ class ClipForge:
         focus=tk.Frame(smart,bg=C["card"])
         focus.grid(row=4,column=0,columnspan=2,sticky="ew",pady=(8,0))
         label(focus,"AUTO FOCUS",9,"muted",True).pack(side="left",padx=(0,12))
-        ttk.Combobox(focus,textvariable=self.subject_mode,state="readonly",
+        VanitasCombo(focus,textvariable=self.subject_mode,state="readonly",
             values=["universal","people","motion","center"],width=16).pack(side="left")
 
         # 05  -  Captions.
@@ -302,7 +305,7 @@ class ClipForge:
         caprow=tk.Frame(captions,bg=C["card"])
         caprow.pack(fill="x")
         label(caprow,"SUBTITLE MODE",9,"muted",True).pack(side="left",padx=(0,12))
-        self.caption_picker=ttk.Combobox(caprow,textvariable=self.caption_label,
+        self.caption_picker=VanitasCombo(caprow,textvariable=self.caption_label,
             state="readonly",values=[p.name for p in PRESETS],width=25)
         self.caption_picker.pack(side="left")
         self.caption_picker.bind("<<ComboboxSelected>>",self.set_caption_from_label)

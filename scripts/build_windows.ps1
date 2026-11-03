@@ -28,6 +28,7 @@ $PyInstallerArgs = @(
     "--collect-all", "yt_dlp",
     "--collect-all", "onnxruntime",
     "--collect-all", "imageio_ffmpeg",
+    "--hidden-import", "vanitas_widgets",
     "--hidden-import", "composition_review",
     "--hidden-import", "review_editor",
     "--hidden-import", "gemini_connection",

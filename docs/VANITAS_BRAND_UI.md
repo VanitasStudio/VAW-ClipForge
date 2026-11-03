@@ -29,3 +29,10 @@ Avoid excessive neon, glow, glassmorphism, blur panels and arcade styling.
 ## Windows packaging
 The supported end-user entry point is dist/VAW-ClipForge.exe.
 The Python source tree and .cmd scripts are development/maintenance artifacts.
+
+## Branded controls (v1.2.1)
+- All application dropdowns use the custom VanitasCombo control, not native ttk combobox chrome.
+- Dropdown popups, selection states and focus borders use the Vanitas palette and Archivo typography.
+- Main workspace and Review Studio scrollbars use branded colors.
+- Review Studio and Composition Review share the same dark palette and functional typography.
+- UI source files are UTF-8; user-facing labels use plain, intentional punctuation to avoid mojibake.

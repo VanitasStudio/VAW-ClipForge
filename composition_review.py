@@ -9,6 +9,7 @@ from PIL import Image, ImageTk
 from dataclasses import replace
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
+from vanitas_widgets import VanitasCombo
 
 from clipforge_contracts import (
     AnalysisBundle, AudioContinuity, AudioPlan, CaptionPlan, CompositionSegment,
@@ -114,7 +115,7 @@ class CompositionReview:
         self.root.title("VAW ClipForge — Composition Review Studio")
         self.root.geometry("1180x850")
         self.root.minsize(1020, 760)
-        self.root.configure(bg="#10141e")
+        self.root.configure(bg="#0B0F14")
         self.selected = 0
         self.caption_span_id = None
         self.visible_caption_ids = []
@@ -138,34 +139,34 @@ class CompositionReview:
         self._select(0)
 
     def _build_ui(self):
-        bg, card, white, muted = "#10141e", "#1b2230", "#f3f5fb", "#a9b4c6"
+        bg, card, white, muted = "#0B0F14", "#111820", "#D9E0E8", "#8793A3"
         header = tk.Frame(self.root, bg=bg)
         header.pack(fill="x", padx=20, pady=(16, 8))
         tk.Label(
             header, text=self.edl.title, bg=bg, fg=white,
-            font=("Segoe UI Semibold", 20),
+            font=("Archivo", 20),
         ).pack(side="left")
         tk.Label(
             header, text=f"{self.edl.strategy.value.replace('_', ' ').title()}",
-            bg="#263247", fg="#c7d4e8", padx=10, pady=5,
-            font=("Segoe UI Semibold", 9),
+            bg="#1D2A38", fg="#D9E0E8", padx=10, pady=5,
+            font=("Archivo", 9),
         ).pack(side="right")
 
         body = tk.Frame(self.root, bg=bg)
         body.pack(fill="both", expand=True, padx=20, pady=8)
-        left = tk.Frame(body, bg=card, highlightbackground="#465067", highlightthickness=1)
+        left = tk.Frame(body, bg=card, highlightbackground="#263342", highlightthickness=1)
         left.pack(side="left", fill="both", expand=True, padx=(0, 10))
-        right = tk.Frame(body, bg=card, highlightbackground="#465067", highlightthickness=1)
+        right = tk.Frame(body, bg=card, highlightbackground="#263342", highlightthickness=1)
         right.pack(side="right", fill="y", padx=(10, 0))
 
         tk.Label(left, text="COMPOSITION TIMELINE", bg=card, fg=muted,
-                 font=("Segoe UI Semibold", 9)).pack(anchor="w", padx=14, pady=(12, 6))
-        self.timeline_canvas=tk.Canvas(left,height=96,bg="#171e2b",highlightthickness=0)
+                 font=("Archivo", 9)).pack(anchor="w", padx=14, pady=(12, 6))
+        self.timeline_canvas=tk.Canvas(left,height=96,bg="#18222D",highlightthickness=0)
         self.timeline_canvas.pack(fill="x",padx=12,pady=(0,8))
         self.timeline_canvas.bind("<Button-1>",self._timeline_click)
         self.timeline_canvas.bind("<Configure>",lambda _event:self._draw_timeline())
         self.listbox = tk.Listbox(
-            left, bg="#171e2b", fg=white, selectbackground="#9d3042",
+            left, bg="#18222D", fg=white, selectbackground="#3B82F6",
             selectforeground=white, relief="flat", bd=0,
             font=("Consolas", 10), activestyle="none",
         )
@@ -179,46 +180,46 @@ class CompositionReview:
         self._button(buttons, "Apply Segment", self._apply_segment).pack(side="right")
 
         tk.Label(right, text="SOURCE PREVIEW", bg=card, fg=muted,
-                 font=("Segoe UI Semibold", 9)).pack(anchor="w", padx=16, pady=(12, 5))
-        self.preview_label=tk.Label(right,bg="#171e2b",fg=muted,text="Select a segment")
+                 font=("Archivo", 9)).pack(anchor="w", padx=16, pady=(12, 5))
+        self.preview_label=tk.Label(right,bg="#18222D",fg=muted,text="Select a segment")
         self.preview_label.pack(fill="x",padx=16,pady=(0,10))
         tk.Label(right, text="SEGMENT DETAILS", bg=card, fg=white,
-                 font=("Segoe UI Semibold", 11)).pack(anchor="w", padx=16, pady=(4, 8))
+                 font=("Archivo", 11)).pack(anchor="w", padx=16, pady=(4, 8))
         self._field(right, "Source In (seconds)", self.start_var)
         self._field(right, "Source Out (seconds)", self.end_var)
         tk.Label(right, text="Segment Role", bg=card, fg=muted,
-                 font=("Segoe UI", 9)).pack(anchor="w", padx=16, pady=(8, 3))
-        ttk.Combobox(
+                 font=("Archivo", 9)).pack(anchor="w", padx=16, pady=(8, 3))
+        VanitasCombo(
             right, textvariable=self.role_var, state="readonly", width=25,
             values=[role.value for role in SegmentRole],
         ).pack(fill="x", padx=16)
         tk.Label(right,text="Transition to next segment",bg=card,fg=muted,
-                 font=("Segoe UI",9)).pack(anchor="w",padx=16,pady=(8,3))
-        self.transition_combo=ttk.Combobox(
+                 font=("Archivo",9)).pack(anchor="w",padx=16,pady=(8,3))
+        self.transition_combo=VanitasCombo(
             right,textvariable=self.transition_var,state="readonly",width=25,
             values=["hard_cut","cross_dissolve"],
         )
         self.transition_combo.pack(fill="x",padx=16)
         tk.Label(right,text="CAPTIONS IN THIS SEGMENT",bg=card,fg=muted,
-                 font=("Segoe UI Semibold",9)).pack(anchor="w",padx=16,pady=(15,4))
+                 font=("Archivo",9)).pack(anchor="w",padx=16,pady=(15,4))
         self.caption_list=tk.Listbox(
-            right,height=3,bg="#171e2b",fg=white,selectbackground="#9d3042",
-            relief="flat",bd=0,font=("Segoe UI",8),activestyle="none",
+            right,height=3,bg="#18222D",fg=white,selectbackground="#3B82F6",
+            relief="flat",bd=0,font=("Archivo",8),activestyle="none",
         )
         self.caption_list.pack(fill="x",padx=16)
         self.caption_list.bind("<<ListboxSelect>>",self._on_caption_select)
         tk.Entry(
-            right,textvariable=self.caption_var,bg="#202a3b",fg=white,
-            insertbackground="white",relief="flat",bd=0,font=("Segoe UI",9),
+            right,textvariable=self.caption_var,bg="#18222D",fg=white,
+            insertbackground="white",relief="flat",bd=0,font=("Archivo",9),
         ).pack(fill="x",padx=16,pady=(5,4),ipady=6)
         self._button(right,"Apply Caption Text",self._apply_caption).pack(anchor="e",padx=16,pady=(0,8))
 
         tk.Label(right, text="COMPOSITION SETTINGS", bg=card, fg=white,
-                 font=("Segoe UI Semibold", 10)).pack(anchor="w", padx=16, pady=(20, 8))
+                 font=("Archivo", 10)).pack(anchor="w", padx=16, pady=(20, 8))
         self._field(right, "Title", self.title_var)
         self._field(right, "Target Duration (12–180s)", self.target_var)
         tk.Label(right,text="CAPTION EXPORT",bg=card,fg=muted,
-                 font=("Segoe UI Semibold",9)).pack(anchor="w",padx=16,pady=(12,3))
+                 font=("Archivo",9)).pack(anchor="w",padx=16,pady=(12,3))
         for variable,text in (
             (self.caption_enabled_var,"Enable captions"),
             (self.caption_burn_var,"Burn captions into video"),
@@ -230,10 +231,10 @@ class CompositionReview:
                 right,text=text,variable=variable,anchor="w",
                 bg=card,fg=white,selectcolor="#354158",
                 activebackground=card,activeforeground=white,
-                font=("Segoe UI",8),padx=0,pady=1,
+                font=("Archivo",8),padx=0,pady=1,
             ).pack(anchor="w",padx=16)
         from subtitle_presets import PRESETS
-        ttk.Combobox(
+        VanitasCombo(
             right,textvariable=self.caption_style_var,state="readonly",
             values=[preset.id for preset in PRESETS],width=24,
         ).pack(fill="x",padx=16,pady=(4,8))
@@ -242,33 +243,33 @@ class CompositionReview:
             text=f"Original source: {Path(self.bundle.source.path).name}\n"
                  f"Current timeline: {self.edl.duration_seconds:.1f}s\n"
                  f"Segments: {len(self.edl.segments)}",
-            bg=card, fg=muted, justify="left", font=("Segoe UI", 9),
+            bg=card, fg=muted, justify="left", font=("Archivo", 9),
         ).pack(anchor="w", padx=16, pady=(12, 14))
 
         footer = tk.Frame(self.root, bg=bg)
         footer.pack(fill="x", padx=20, pady=(4, 16))
         tk.Label(footer, textvariable=self.status_var, bg=bg, fg=muted,
-                 font=("Segoe UI", 9), anchor="w").pack(side="left", fill="x", expand=True)
+                 font=("Archivo", 9), anchor="w").pack(side="left", fill="x", expand=True)
         self._button(footer, "Render Revised Composition", self._render, primary=True).pack(side="right")
         self._button(footer, "Save EDL", self._save).pack(side="right", padx=8)
 
     def _button(self, parent, text, command, primary=False):
         return tk.Button(
             parent, text=text, command=command, relief="flat", bd=0,
-            bg="#d63b50" if primary else "#273247", fg="#f3f5fb",
-            activebackground="#ec5267" if primary else "#35445e",
+            bg="#3B82F6" if primary else "#1D2A38", fg="#D9E0E8",
+            activebackground="#60A5FA" if primary else "#26384C",
             activeforeground="#ffffff", cursor="hand2",
-            padx=12, pady=8, font=("Segoe UI Semibold", 9),
+            padx=12, pady=8, font=("Archivo", 9),
         )
 
     def _field(self, parent, label, variable):
-        tk.Label(parent, text=label, bg="#1b2230", fg="#a9b4c6",
-                 font=("Segoe UI", 9)).pack(anchor="w", padx=16, pady=(8, 3))
+        tk.Label(parent, text=label, bg="#111820", fg="#8793A3",
+                 font=("Archivo", 9)).pack(anchor="w", padx=16, pady=(8, 3))
         tk.Entry(
-            parent, textvariable=variable, bg="#202a3b", fg="#f3f5fb",
+            parent, textvariable=variable, bg="#18222D", fg="#D9E0E8",
             insertbackground="white", relief="flat", bd=0,
-            font=("Segoe UI", 10), highlightthickness=1,
-            highlightbackground="#465067",
+            font=("Archivo", 10), highlightthickness=1,
+            highlightbackground="#263342",
         ).pack(fill="x", padx=16, ipady=7)
 
     def _refresh_list(self):
@@ -300,8 +301,8 @@ class CompositionReview:
             color=palette.get(segment.role.value,"#536273")
             outline="#ffffff" if index==self.selected else "#303b4e"
             canvas.create_rectangle(x,27,x+bar_width,72,fill=color,outline=outline,width=2 if index==self.selected else 1)
-            canvas.create_text(x+bar_width/2,49,text=f"{index+1} · {segment.role.value}",fill="#ffffff",font=("Segoe UI Semibold",8))
-            canvas.create_text(x,15,text=f"{segment.timeline_in:.0f}s",anchor="w",fill="#a9b4c6",font=("Segoe UI",7))
+            canvas.create_text(x+bar_width/2,49,text=f"{index+1} · {segment.role.value}",fill="#ffffff",font=("Archivo",8))
+            canvas.create_text(x,15,text=f"{segment.timeline_in:.0f}s",anchor="w",fill="#8793A3",font=("Archivo",7))
             x+=bar_width
         canvas.configure(scrollregion=(0,0,max(width,x+10),96))
 
