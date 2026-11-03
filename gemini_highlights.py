@@ -292,7 +292,7 @@ def sampled_frames(src,offset,length,folder):
 
 def process_ai(src,dest,clips=3,seconds=30,style="blur",model=MODEL,log=print,
                dry_run=False,provider=None,visual=True,render=True,
-               context_aware=True,duration_model="base"):
+               context_aware=True,duration_model="base",boundary_spans=None):
     src,dest=Path(src).resolve(),Path(dest).resolve()
     if not src.is_file() or src.suffix.lower() not in EXTS:
         raise ValueError("Select an existing supported local video file.")
@@ -375,7 +375,7 @@ def process_ai(src,dest,clips=3,seconds=30,style="blur",model=MODEL,log=print,
             for x in candidates:
                 rows.append({**x,"start":x["start"]+offset,"end":x["end"]+offset})
             log(f"Candidates: {len(candidates)}")
-    sentences=[]
+    sentences=list(boundary_spans or [])
     if context_aware:
         try:
             sentences=analyze_boundaries(src,dest,model_size=duration_model,log=log)
