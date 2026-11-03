@@ -2,6 +2,29 @@
 
 VAW ClipForge v1.2 builds on the v1.1 local-first desktop editor. It keeps Standalone Highlights and adds two complete Story Composer outputs: Smart Compilation and Narrative Reconstruction. Both story strategies can be enabled together.
 
+## Vanitas Studio identity
+
+The desktop interface follows the Vanitas Studio product language: dark, premium, minimal and editorial.
+Archivo is used for functional UI typography; Quantico is reserved for the product wordmark.
+The palette is built around Vanitas Blue, platinum and restrained orange accents.
+See docs/VANITAS_BRAND_UI.md for the full tokens and UI rules.
+
+## Windows desktop application
+
+End users should launch dist/VAW-ClipForge.exe. The application is packaged as a single-file,
+windowed Windows executable with the Vanitas app icon and bundled fonts. No Python installation
+or CMD launcher is required to start the packaged app.
+
+Build or rebuild on Windows with:
+
+~~~powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build_windows.ps1 -Clean
+~~~
+
+The resulting executable is written to dist/VAW-ClipForge.exe. First-time speech-model use may
+download the selected Whisper model into the user's Hugging Face cache. The Gemini key remains
+protected with Windows DPAPI under the current Windows account.
+
 ## v1.2 production outputs
 
 - **Standalone Highlights** — separate vertical clips selected from the strongest complete moments.

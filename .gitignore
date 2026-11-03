@@ -51,3 +51,7 @@ Thumbs.db
 Desktop.ini
 
 tests/samples/
+
+# Windows packaging outputs
+build/
+dist/

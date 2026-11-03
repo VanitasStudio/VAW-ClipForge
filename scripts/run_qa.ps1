@@ -27,6 +27,7 @@ print(f"PY_COMPILE_OK: {len(files)} modules")
         "tests.qa_v12_ui_integration",
         "tests.qa_v12_review_ui",
         "tests.qa_v12_title_hashtags",
+        "tests.qa_v12_branding_packaging",
         "tests.qa_v11_ui",
         "tests.qa_v11_gui_smoke"
     )

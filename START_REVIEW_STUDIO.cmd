@@ -1,7 +1,10 @@
 @echo off
-cd /d "%~dp0"
-if exist "C:\Python314\pythonw.exe" (
-  start "" "C:\Python314\pythonw.exe" "%~dp0review_editor.py" --clip "%~dp0exports\videoplayback\videoplayback_v04_01_00243s_rev3.mp4"
-) else (
-  "C:\Python314\python.exe" "%~dp0review_editor.py"
+setlocal
+set "APP=%~dp0dist\VAW-ClipForge.exe"
+if exist "%APP%" (
+  start "" "%APP%" --review-editor
+  exit /b 0
 )
+echo VAW ClipForge.exe is not built yet.
+echo Build it with: powershell -ExecutionPolicy Bypass -File scripts\build_windows.ps1
+pause

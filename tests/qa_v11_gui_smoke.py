@@ -2,7 +2,7 @@ from clipforge_gui import ClipForge
 app=ClipForge()
 app.root.withdraw()
 app.root.update_idletasks()
-assert app.root.title()=="VAW ClipForge v1.1 | AI Editorial Studio"
+assert app.root.title()=="VAW ClipForge | Vanitas Studio"
 assert "All Capital Subtitle" in tuple(app.caption_picker["values"])
 assert app.caption_style.get()=="karaoke"
 app.caption_label.set("All Capital Subtitle")

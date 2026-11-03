@@ -1,8 +1,10 @@
-"""VAW ClipForge v1.2 â€” AI editorial intelligence and story composition desktop application."""
+"""VAW ClipForge v1.2  -  AI editorial intelligence and story composition desktop application."""
 from __future__ import annotations
 import os
 import sys
 import subprocess
+import ctypes
+import argparse
 from silent_process import run as silent_run, popen as silent_popen
 import queue
 import threading
@@ -19,16 +21,35 @@ from url_source import (validate_url,check_link,fetch_video,clear_cache,cache_st
 from subtitle_presets import PRESETS, preview_image
 from PIL import ImageTk
 
-ROOT=Path(__file__).resolve().parent
-C={"bg":"#10141e","card":"#1b2230","white":"#f3f5fb",
-   "muted":"#a9b4c6","red":"#d63b50","line":"#465067","green":"#84ddb1"}
+BUNDLE_ROOT=Path(getattr(sys,"_MEIPASS",Path(__file__).resolve().parent))
+ROOT=Path(sys.executable).resolve().parent if getattr(sys,"frozen",False) else Path(__file__).resolve().parent
+ASSET_ROOT=BUNDLE_ROOT/"assets"
+C={"bg":"#0B0F14","card":"#111820","white":"#D9E0E8",
+   "muted":"#8793A3","red":"#3B82F6","blue":"#3B82F6",
+   "orange":"#F97316","line":"#263342","green":"#79CBA5",
+   "field":"#18222D","raised":"#1D2A38","hover":"#26384C"}
+
+def load_brand_fonts():
+    """Load bundled Vanitas typefaces privately; no system installation required."""
+    if os.name != "nt":
+        return
+    add_font=ctypes.windll.gdi32.AddFontResourceExW
+    for filename in ("Archivo.ttf","Quantico-Regular.ttf","Quantico-Bold.ttf"):
+        path=ASSET_ROOT/"fonts"/filename
+        if path.is_file():
+            add_font(str(path),0x10,None)  # FR_PRIVATE
 
 class ClipForge:
     def __init__(self):
+        load_brand_fonts()
         self.root=tk.Tk()
-        self.root.title("VAW ClipForge v1.1 | AI Editorial Studio")
-        self.root.geometry("1080x920")
-        self.root.minsize(960,760)
+        self.root.title("VAW ClipForge | Vanitas Studio")
+        self.root.geometry("1180x900")
+        self.root.minsize(1040,720)
+        icon_path=ASSET_ROOT/"branding"/"vanitas.ico"
+        if icon_path.is_file():
+            try:self.root.iconbitmap(str(icon_path))
+            except tk.TclError:pass
         self.root.configure(bg=C["bg"])
         default_source=Path.home()/"Downloads"/"videoplayback.mp4"
         self.src=tk.StringVar(value=str(default_source) if default_source.exists() else "")
@@ -36,7 +57,8 @@ class ClipForge:
         self.video_url=tk.StringVar(value="")
         self.source_type=tk.StringVar(value="Local File")
         self.resolution=tk.StringVar(value="1080p")
-        self.dest=tk.StringVar(value=str(ROOT/"exports"))
+        default_exports=(Path.home()/"Videos"/"VAW ClipForge" if getattr(sys,"frozen",False) else ROOT/"exports")
+        self.dest=tk.StringVar(value=str(default_exports))
         self.count=tk.IntVar(value=3)
         self.seconds=tk.IntVar(value=30)
         self.standalone_output=tk.BooleanVar(value=True)
@@ -63,25 +85,25 @@ class ClipForge:
         self.root.after(200,self.poll)
 
     def label(self,parent,text,size=10,color="white",bold=False):
-        font=("Segoe UI Semibold" if bold else "Segoe UI",size)
+        font=("Archivo",size,"bold" if bold else "normal")
         return tk.Label(parent,text=text,bg=C["bg"],fg=C.get(color,color),
                         font=font,anchor="w",justify="left")
     def button(self,parent,text,fn,primary=False):
-        normal=C["red"] if primary else "#273247"
-        hover="#ec5267" if primary else "#35445e"
+        normal=C["red"] if primary else C["raised"]
+        hover="#60A5FA" if primary else "#2E4054"
         widget=tk.Button(parent,text=text,command=fn,relief="flat",bd=0,
                          cursor="hand2",padx=15,pady=9,
                          bg=normal,fg=C["white"],
                          activebackground=hover,activeforeground=C["white"],
-                         font=("Segoe UI Semibold",10),highlightthickness=0)
+                         font=("Archivo",10,"bold"),highlightthickness=0)
         widget.bind("<Enter>",lambda _e:widget.configure(bg=hover))
         widget.bind("<Leave>",lambda _e:widget.configure(bg=normal))
         return widget
     def entry(self,parent,var):
-        widget=tk.Entry(parent,textvariable=var,font=("Segoe UI",10),
-                        bg="#202a3b",fg=C["white"],insertbackground="white",
+        widget=tk.Entry(parent,textvariable=var,font=("Archivo",10),
+                        bg=C["field"],fg=C["white"],insertbackground="white",
                         relief="flat",highlightthickness=1,
-                        highlightbackground=C["line"],highlightcolor="#7187ad",
+                        highlightbackground=C["line"],highlightcolor="#60A5FA",
                         bd=0)
         return widget
     def create_ui(self):
@@ -91,28 +113,35 @@ class ClipForge:
             style.theme_use("clam")
         except tk.TclError:
             pass
-        style.configure("TCombobox",fieldbackground="#202a3b",background="#273247",
+        style.configure("TCombobox",fieldbackground=C["field"],background=C["raised"],
                         foreground=C["white"],arrowcolor=C["white"],borderwidth=0,
-                        padding=(9,7),selectbackground="#273247",
+                        padding=(9,7),selectbackground=C["raised"],
                         selectforeground=C["white"])
         style.map("TCombobox",
-                  fieldbackground=[("readonly","#202a3b"),("focus","#26344a")],
+                  fieldbackground=[("readonly",C["field"]),("focus","#26344a")],
                   foreground=[("readonly",C["white"])],
-                  selectbackground=[("readonly","#273247")])
-        style.configure("Vertical.TScrollbar",background="#273247",
+                  selectbackground=[("readonly",C["raised"])])
+        style.configure("Vertical.TScrollbar",background=C["raised"],
                         troughcolor=C["bg"],bordercolor=C["bg"],arrowcolor=C["muted"])
 
         shell=tk.Frame(self.root,bg=C["bg"])
-        shell.pack(fill="both",expand=True,padx=22,pady=14)
+        shell.pack(fill="both",expand=True,padx=26,pady=20)
 
         header=tk.Frame(shell,bg=C["bg"])
         header.pack(fill="x",pady=(0,12))
-        tk.Label(header,text="VAW / CLIPFORGE",bg=C["bg"],fg=C["white"],
-                 font=("Segoe UI Semibold",23)).pack(side="left")
-        tk.Label(header,text="AI EDITORIAL STUDIO",bg="#263247",fg="#c7d4e8",
-                 font=("Segoe UI Semibold",9),padx=11,pady=6).pack(side="right",anchor="center")
-        tk.Label(shell,text="Turn long-form videos into story-led vertical clips.",
-                 bg=C["bg"],fg=C["muted"],font=("Segoe UI",10)).pack(anchor="w",pady=(0,10))
+        mark=tk.Canvas(header,width=42,height=42,bg=C["bg"],highlightthickness=0)
+        mark.pack(side="left",padx=(0,12))
+        mark.create_polygon(5,7,15,7,22,25,29,7,39,7,25,37,19,37,fill=C["white"],outline="")
+        mark.create_polygon(29,7,39,7,34,18,29,18,fill=C["blue"],outline="")
+        mark.create_line(5,7,15,7,22,25,29,7,39,7,fill=C["white"],width=1)
+        brand=tk.Frame(header,bg=C["bg"])
+        brand.pack(side="left",anchor="center")
+        tk.Label(brand,text="CLIPFORGE",bg=C["bg"],fg=C["white"],
+                 font=("Quantico",21)).pack(anchor="w")
+        tk.Label(brand,text="VANITAS STUDIO",bg=C["bg"],fg=C["muted"],
+                 font=("Archivo",8,"bold")).pack(anchor="w",pady=(0,1))
+        tk.Label(header,text="V1.2  /  EDITORIAL WORKSPACE",bg=C["bg"],fg=C["muted"],
+                 font=("Archivo",8,"bold")).pack(side="right",anchor="center")
 
         # Scrollable settings; the primary action and activity log stay visible.
         scroll_area=tk.Frame(shell,bg=C["bg"])
@@ -131,7 +160,7 @@ class ClipForge:
         def label(parent,text,size=10,color="white",bold=False):
             return tk.Label(parent,text=text,bg=parent.cget("bg"),
                             fg=C.get(color,color),
-                            font=("Segoe UI Semibold" if bold else "Segoe UI",size),
+                            font=("Archivo",size,"bold" if bold else "normal"),
                             anchor="w",justify="left")
         def section(title,subtitle):
             card=tk.Frame(content,bg=C["card"],highlightbackground=C["line"],
@@ -140,14 +169,12 @@ class ClipForge:
             head=tk.Frame(card,bg=C["card"])
             head.pack(fill="x",padx=17,pady=(12,2))
             label(head,title,11,"white",True).pack(anchor="w")
-            if subtitle:
-                label(head,subtitle,9,"muted").pack(anchor="w",pady=(2,7))
             body=tk.Frame(card,bg=C["card"])
             body.pack(fill="x",padx=17,pady=(2,14))
             return body
 
-        # 01 â€” Source and destination.
-        source=section("01  SOURCE VIDEO","Choose a local file or paste a public video URL.")
+        # 01  -  Source and destination.
+        source=section("SOURCE","")
         sourcebar=tk.Frame(source,bg=C["card"])
         sourcebar.pack(fill="x",pady=(0,8))
         label(sourcebar,"INPUT TYPE",9,"muted",True).pack(side="left",padx=(0,10))
@@ -169,8 +196,8 @@ class ClipForge:
         self.entry(destrow,self.dest).pack(side="left",fill="x",expand=True,ipady=8)
         self.button(destrow,"Choose Folder",self.browse_out).pack(side="left",padx=(9,0))
 
-        # 02 â€” Output settings.
-        output=section("02  CLIP SETTINGS","Duration is a soft target. Complete story boundaries take priority.")
+        # 02  -  Output settings.
+        output=section("CLIP SETTINGS","")
         for col in range(4):
             output.grid_columnconfigure(col,weight=1)
         settings=[
@@ -185,45 +212,45 @@ class ClipForge:
             label(box,title,9,"muted",True).pack(anchor="w",pady=(0,7))
             if kind=="spin":
                 widget=tk.Spinbox(box,from_=opts[0],to=opts[1],width=9,
-                    textvariable=var,bg="#202a3b",fg=C["white"],
-                    insertbackground="white",buttonbackground="#354158",
-                    relief="flat",bd=0,font=("Segoe UI",11),
+                    textvariable=var,bg=C["field"],fg=C["white"],
+                    insertbackground="white",buttonbackground=C["hover"],
+                    relief="flat",bd=0,font=("Archivo",11),
                     highlightthickness=1,highlightbackground=C["line"])
             else:
                 widget=ttk.Combobox(box,textvariable=var,state="readonly",
                                     values=opts[0],width=11)
             widget.pack(anchor="w",fill="x",ipady=3)
 
-        # 02B â€” Output modes.
-        outputs=section("02B  PRODUCTION OUTPUTS","Choose which deliverables ClipForge creates. Both Story Composer strategies are enabled by default.")
+        # 02B  -  Output modes.
+        outputs=section("OUTPUTS","")
         for col in range(2):
             outputs.grid_columnconfigure(col,weight=1)
         output_checks=[
             (self.standalone_output,"Standalone Highlights",0,0),
-            (self.smart_compilation_output,"Story Composer â€” Smart Compilation",0,1),
-            (self.narrative_output,"Story Composer â€” Narrative Reconstruction",1,0),
+            (self.smart_compilation_output,"Story Composer  -  Smart Compilation",0,1),
+            (self.narrative_output,"Story Composer  -  Narrative Reconstruction",1,0),
         ]
         for variable,text,row,col in output_checks:
             tk.Checkbutton(
                 outputs,text=text,variable=variable,anchor="w",
-                bg=C["card"],fg=C["white"],selectcolor="#354158",
+                bg=C["card"],fg=C["white"],selectcolor=C["hover"],
                 activebackground=C["card"],activeforeground=C["white"],
-                font=("Segoe UI",9),padx=2,pady=5,
+                font=("Archivo",9),padx=2,pady=5,
                 highlightthickness=0,
             ).grid(row=row,column=col,sticky="w",padx=(0,12))
         story_target=tk.Frame(outputs,bg=C["card"])
         story_target.grid(row=1,column=1,sticky="e")
-        label(story_target,"COMPOSED DURATION (12â€“180s)",9,"muted",True).pack(side="left",padx=(0,9))
+        label(story_target,"COMPOSED DURATION (12 - 180s)",9,"muted",True).pack(side="left",padx=(0,9))
         tk.Spinbox(
             story_target,from_=12,to=180,width=7,textvariable=self.story_seconds,
-            bg="#202a3b",fg=C["white"],insertbackground="white",
-            buttonbackground="#354158",relief="flat",bd=0,
-            font=("Segoe UI",10),highlightthickness=1,
+            bg=C["field"],fg=C["white"],insertbackground="white",
+            buttonbackground=C["hover"],relief="flat",bd=0,
+            font=("Archivo",10),highlightthickness=1,
             highlightbackground=C["line"],
         ).pack(side="left",ipady=3)
 
-        # 03 â€” AI engine.
-        ai=section("03  AI HIGHLIGHT ENGINE","Gemini finds complete stories; offline audio mode is available as a fallback.")
+        # 03  -  AI engine.
+        ai=section("AI ENGINE","")
         ai.grid_columnconfigure(1,weight=1)
         label(ai,"DETECTION MODE",9,"muted",True).grid(row=0,column=0,sticky="w",pady=(0,6))
         label(ai,"GEMINI MODEL",9,"muted",True).grid(row=0,column=1,sticky="w",padx=(15,0),pady=(0,6))
@@ -238,15 +265,15 @@ class ClipForge:
         keyrow=tk.Frame(ai,bg=C["card"])
         keyrow.grid(row=2,column=0,columnspan=2,sticky="ew",pady=(11,0))
         self.key_status=tk.Label(keyrow,text="",bg=C["card"],fg=C["muted"],
-                                 font=("Segoe UI",9),anchor="w")
+                                 font=("Archivo",9),anchor="w")
         self.key_status.pack(side="left",fill="x",expand=True)
         self.button(keyrow,"Set API Key",self.set_key).pack(side="right",padx=(7,0))
         self.button(keyrow,"Remove Key",self.remove_key).pack(side="right",padx=(7,0))
         self.button(keyrow,"Test Connection",self.test_api).pack(side="right")
         self.refresh_key_status()
 
-        # 04 â€” Intelligent processing.
-        smart=section("04  SMART PROCESSING","Choose which local analysis and enhancement stages run during export.")
+        # 04  -  Intelligent processing.
+        smart=section("PROCESSING","")
         smart.grid_columnconfigure(0,weight=1)
         smart.grid_columnconfigure(1,weight=1)
         checks=[
@@ -260,22 +287,18 @@ class ClipForge:
         ]
         for var,text,row,col in checks:
             tk.Checkbutton(smart,text=text,variable=var,anchor="w",
-                bg=C["card"],fg=C["white"],selectcolor="#354158",
+                bg=C["card"],fg=C["white"],selectcolor=C["hover"],
                 activebackground=C["card"],activeforeground=C["white"],
-                font=("Segoe UI",9),padx=2,pady=5,
+                font=("Archivo",9),padx=2,pady=5,
                 highlightthickness=0).grid(row=row,column=col,sticky="w",padx=(0,12))
         focus=tk.Frame(smart,bg=C["card"])
         focus.grid(row=4,column=0,columnspan=2,sticky="ew",pady=(8,0))
         label(focus,"AUTO FOCUS",9,"muted",True).pack(side="left",padx=(0,12))
         ttk.Combobox(focus,textvariable=self.subject_mode,state="readonly",
             values=["universal","people","motion","center"],width=16).pack(side="left")
-        label(focus,"Universal works with animation, icons, diagrams and objects.",
-              9,"muted").pack(side="left",padx=12)
-        label(smart,"Video Vision MCP is optional. It samples extra local frames; Gemini receives only selected compressed frames.",
-              8,"muted").grid(row=5,column=0,columnspan=2,sticky="w",pady=(5,0))
 
-        # 05 â€” Captions.
-        captions=section("05  SUBTITLE STYLE","Select a visual preset. All Capital forces every spoken word into uppercase.")
+        # 05  -  Captions.
+        captions=section("CAPTIONS","")
         caprow=tk.Frame(captions,bg=C["card"])
         caprow.pack(fill="x")
         label(caprow,"SUBTITLE MODE",9,"muted",True).pack(side="left",padx=(0,12))
@@ -284,10 +307,8 @@ class ClipForge:
         self.caption_picker.pack(side="left")
         self.caption_picker.bind("<<ComboboxSelected>>",self.set_caption_from_label)
         self.button(caprow,"Browse Styles",self.show_caption_styles).pack(side="left",padx=(9,0))
-        self.caption_hint=label(captions,"Karaoke â€” word-by-word crimson highlight.",9,"muted")
+        self.caption_hint=label(captions,"Karaoke  -  word-by-word crimson highlight.",9,"muted")
         self.caption_hint.pack(anchor="w",pady=(9,0))
-        label(captions,"Subtitle files (.SRT and .ASS) are saved beside each exported clip.",
-              9,"muted").pack(anchor="w",pady=(4,0))
         label(content,"Only process videos you own or have permission to repurpose.",
               9,"muted").pack(anchor="w",pady=(0,10))
 
@@ -307,15 +328,11 @@ class ClipForge:
         loghead=tk.Frame(logcard,bg=C["card"])
         loghead.pack(fill="x",padx=12,pady=(7,2))
         label(loghead,"ACTIVITY",9,"muted",True).pack(side="left")
-        label(loghead,"Processing messages and export status",8,"muted").pack(side="right")
-        self.logview=tk.Text(logcard,height=5,bg="#171e2b",fg="#d9e1ef",
-            insertbackground="white",font=("Consolas",9),relief="flat",
+        self.logview=tk.Text(logcard,height=3,bg="#0E141B",fg="#D9E0E8",
+            insertbackground="white",font=("Archivo",9),relief="flat",
             wrap="word",padx=11,pady=8,bd=0)
         self.logview.pack(fill="both",expand=True,padx=8,pady=(2,8))
-        self.log("Ready. AI ranks story structure, visuals and retention potential.")
-        self.log("Context-aware duration keeps complete thoughts together; target duration is not a hard cut.")
-        self.log("URL mode downloads one authorized public video into a reusable local cache.")
-        self.log("No video is published automatically.")
+        self.log("Ready.")
 
     def set_caption_from_label(self,_=None):
         selected=self.caption_label.get()
@@ -324,7 +341,7 @@ class ClipForge:
             return
         self.caption_style.set(preset.id)
         if hasattr(self,"caption_hint"):
-            self.caption_hint.configure(text=f"{preset.name} â€” {preset.sub}.")
+            self.caption_hint.configure(text=f"{preset.name}  -  {preset.sub}.")
         self.log("Subtitle mode selected: "+preset.name)
 
     def show_caption_styles(self):
@@ -351,20 +368,20 @@ class ClipForge:
                 if chosen:
                     self.caption_label.set(chosen.name)
                     if hasattr(self,"caption_hint"):
-                        self.caption_hint.configure(text=f"{chosen.name} â€” {chosen.sub}.")
+                        self.caption_hint.configure(text=f"{chosen.name}  -  {chosen.sub}.")
                 self.log("Subtitle mode selected: "+(chosen.name if chosen else style))
                 dialog.destroy()
             tk.Button(frame,image=photo,command=select,borderwidth=0,
                       relief="flat",bg=C["card"],cursor="hand2").pack()
             tk.Label(frame,text=preset.name,bg=C["card"],fg=C["white"],
-                     font=("Segoe UI Semibold",11),anchor="w").pack(fill="x",pady=(6,0))
+                     font=("Archivo",11,"bold"),anchor="w").pack(fill="x",pady=(6,0))
             tk.Label(frame,text=preset.sub,bg=C["card"],fg=C["muted"],
-                     font=("Segoe UI",9),anchor="w").pack(fill="x")
+                     font=("Archivo",9),anchor="w").pack(fill="x")
         dialog._images=previews
 
     def refresh_key_status(self):
         self.key_status.configure(text="Gemini key configured" if has_key()
-                                  else "Gemini key missing â€” click Set Gemini Key",
+                                  else "Gemini key not configured",
                                   fg=C["green"] if has_key() else C["muted"])
     def switch_source(self,_=None):
         mode=self.source_type.get()
@@ -792,7 +809,9 @@ class ClipForge:
                 if not selected:
                     return
                 chosen=Path(selected)
-            args=[sys.executable,str(ROOT/"composition_review.py"),"--edl",str(chosen)]
+            args=([sys.executable,"--composition-review","--edl",str(chosen)]
+                  if getattr(sys,"frozen",False)
+                  else [sys.executable,str(ROOT/"composition_review.py"),"--edl",str(chosen)])
             try:
                 silent_popen(args,cwd=str(ROOT))
                 self.log("Multi-segment Composition Review Studio opened.")
@@ -810,7 +829,8 @@ class ClipForge:
                 if recent:candidate=recent[-1]
             except (OSError,ValueError,KeyError):
                 pass
-        args=[sys.executable,str(ROOT/"review_editor.py")]
+        args=([sys.executable,"--review-editor"] if getattr(sys,"frozen",False)
+              else [sys.executable,str(ROOT/"review_editor.py")])
         if candidate:args.extend(["--clip",str(candidate)])
         try:
             silent_popen(args,cwd=str(ROOT))
@@ -822,5 +842,18 @@ class ClipForge:
         p.mkdir(parents=True,exist_ok=True)
         os.startfile(str(p))
 
-if __name__=="__main__":
+def main():
+    if "--composition-review" in sys.argv:
+        from composition_review import main as review_main
+        sys.argv=[sys.argv[0]]+[arg for arg in sys.argv[1:] if arg!="--composition-review"]
+        review_main()
+        return
+    if "--review-editor" in sys.argv:
+        from review_editor import main as editor_main
+        sys.argv=[sys.argv[0]]+[arg for arg in sys.argv[1:] if arg!="--review-editor"]
+        editor_main()
+        return
     ClipForge().root.mainloop()
+
+if __name__=="__main__":
+    main()

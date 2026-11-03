@@ -66,8 +66,8 @@ source=(Path(__file__).resolve().parents[1] / "clipforge_gui.py").read_text(enco
 ast.parse(source)
 assert "def create_ui(self):" in source
 assert "def set_caption_from_label(self,_=None):" in source
-assert "AI EDITORIAL STUDIO" in source
-assert "All Capital forces every spoken word into uppercase." in source
+assert "VANITAS STUDIO" in source and "CLIPFORGE" in source
+assert "All Capital forces every spoken word into uppercase." not in source
 assert "values=[p.name for p in PRESETS]" in source
 print("PRESET_COUNT",len(PRESETS))
 print("ALL_CAPITAL_RENDERED",plain)
