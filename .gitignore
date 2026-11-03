@@ -1,4 +1,4 @@
-﻿# Local configuration and credentials
+# Local configuration and credentials
 .env
 .env.*
 !.env.example
@@ -8,7 +8,14 @@ secrets/
 credentials/
 
 # Generated media and caches
+.venv/
+venv/
+node_modules/
+.cache/
+.mcp-cache/
 exports/
+samples/*
+!samples/.gitkeep
 url-cache/
 models/
 bin/
@@ -42,3 +49,9 @@ __pycache__/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+tests/samples/
+
+# Windows packaging outputs
+build/
+dist/

@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field, is_dataclass
 from enum import Enum
@@ -121,6 +121,8 @@ class EditorialEvent:
     requires_event_ids: tuple[str, ...] = ()
     supports_event_ids: tuple[str, ...] = ()
     contradicts_event_ids: tuple[str, ...] = ()
+    visual_summary: str = ""
+    visual_evidence_seconds: tuple[float, ...] = ()
 
     def __post_init__(self) -> None:
         if self.start_seconds < 0 or self.end_seconds <= self.start_seconds:
@@ -139,6 +141,9 @@ class AnalysisBundle:
     analysis_version: str = "1.0"
     created_at: str = ""
     warnings: tuple[str, ...] = ()
+    composition_orders: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    event_roles: dict[str, str] = field(default_factory=dict)
+    event_dependencies: dict[str, tuple[str, ...]] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -301,6 +306,18 @@ def validate_edl(edl: EditDecisionList, source: MediaSource) -> ValidationReport
             issues.append(ValidationIssue("invalid_transition_pair", "Transition must connect adjacent segments"))
         if transition.from_segment_id not in seen_ids or transition.to_segment_id not in seen_ids:
             issues.append(ValidationIssue("unknown_transition_segment", "Transition references a segment that is not in this EDL"))
+        if transition.kind not in {TransitionKind.HARD_CUT, TransitionKind.CROSS_DISSOLVE}:
+            issues.append(ValidationIssue(
+                "unsupported_transition",
+                "This ClipForge version supports hard cuts and cross-dissolves only",
+            ))
+        if transition.kind == TransitionKind.CROSS_DISSOLVE:
+            left = next((item for item in edl.segments if item.segment_id == transition.from_segment_id), None)
+            right = next((item for item in edl.segments if item.segment_id == transition.to_segment_id), None)
+            if transition.duration_seconds <= 0:
+                issues.append(ValidationIssue("invalid_transition_duration", "Cross-dissolves must have a positive duration"))
+            elif left and right and transition.duration_seconds > min(left.duration_seconds, right.duration_seconds) * 0.25:
+                issues.append(ValidationIssue("transition_too_long", "Cross-dissolve duration cannot exceed 25% of either adjacent segment"))
 
     return ValidationReport(valid=not any(issue.severity == "error" for issue in issues), issues=tuple(issues))
 

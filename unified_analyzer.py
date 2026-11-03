@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import math
+from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 from typing import Callable
@@ -140,6 +141,7 @@ def _editorial_events(rows: list[dict]) -> tuple[EditorialEvent, ...]:
                 role=SegmentRole.SUPPORT,
                 confidence=max(0.0, min(1.0, score / 100.0)),
                 tags=tags,
+                visual_summary=str(row.get("visual_notes", ""))[:600],
             ))
         except (TypeError, ValueError, KeyError):
             continue
@@ -181,6 +183,9 @@ def analyze_source(
     duration_model: str = "base",
     include_scenes: bool = True,
     provider=None,
+    story_provider=None,
+    vision_provider=None,
+    vision_enabled: bool | None = None,
     log: Callable[[str], None] = print,
 ) -> AnalysisBundle:
     """Run local analysis and Gemini, returning a single AnalysisBundle."""
@@ -189,6 +194,42 @@ def analyze_source(
     cache.mkdir(parents=True, exist_ok=True)
     media = probe_source(path)
     warnings: list[str] = []
+    vision_result = None
+    if vision_enabled is None:
+        try:
+            from video_vision_adapter import is_enabled
+            vision_enabled = is_enabled() or vision_provider is not None
+        except Exception:
+            vision_enabled = False
+    if vision_enabled:
+        try:
+            if vision_provider is None:
+                from video_vision_adapter import VideoVisionMCPProvider
+                vision_provider = VideoVisionMCPProvider()
+            from vision_cache import CachedVisionProvider, default_vision_cache_dir
+            from vision_quality import filter_vision_frames
+            vision_provider = CachedVisionProvider(vision_provider, default_vision_cache_dir())
+            vision_result = vision_provider.analyze(
+                path, duration_seconds=media.duration_seconds, max_frames=8
+            )
+            quality = filter_vision_frames(
+                vision_result.frames,
+                duration_seconds=media.duration_seconds,
+                max_frames=8,
+            )
+            vision_result = replace(
+                vision_result,
+                frames=quality.frames,
+                warnings=tuple(dict.fromkeys((*vision_result.warnings, *quality.warnings))),
+            )
+            warnings.extend(vision_result.warnings)
+            log(
+                f"Visual intelligence ready: {len(vision_result.frames)} key frames "
+                f"from {vision_result.provider}."
+            )
+        except Exception as exc:
+            warnings.append("Video Vision MCP was unavailable; built-in visual analysis will be used.")
+            log(f"Video Vision MCP skipped: {type(exc).__name__}: {str(exc)[:180]}")
     transcript_rows: list[dict] = []
     scene_cuts: list[float] = []
     editorial_rows: list[dict] = []
@@ -225,6 +266,7 @@ def analyze_source(
             render=False,
             context_aware=False,
             boundary_spans=transcript_rows,
+            vision_frames=vision_result.frames if vision_result else None,
         )
         editorial_rows = result.get("ranked_candidates", [])
         if not editorial_rows:
@@ -244,6 +286,28 @@ def analyze_source(
         editorial_rows=editorial_rows,
         warnings=warnings,
     )
+    if vision_result is not None:
+        try:
+            from multimodal_fusion import fuse_visual_evidence
+            bundle = fuse_visual_evidence(bundle, vision_result)
+        except Exception as exc:
+            warnings.append("Visual evidence could not be attached to the analysis timeline.")
+            bundle = replace(bundle, warnings=tuple(dict.fromkeys((*bundle.warnings, *warnings))))
+            log(f"Visual evidence fusion skipped: {type(exc).__name__}: {str(exc)[:160]}")
+    if bundle.events:
+        try:
+            from gemini_highlights import request_story_compositions
+            story = request_story_compositions(bundle.events, provider=story_provider)
+            bundle = replace(
+                bundle,
+                composition_orders=story["composition_orders"],
+                event_roles=story["event_roles"],
+                event_dependencies=story["event_dependencies"],
+            )
+        except Exception as exc:
+            warnings.append("AI story structure was unavailable; deterministic composition ordering will be used.")
+            bundle = replace(bundle, warnings=tuple(warnings))
+            log(f"Story structure unavailable: {type(exc).__name__}: {str(exc)[:180]}")
     log(
         f"Analysis ready: {len(bundle.transcript)} transcript spans, "
         f"{len(bundle.scenes)} scenes, {len(bundle.events)} editorial moments."

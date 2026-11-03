@@ -9,6 +9,7 @@ import threading
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
+from vanitas_widgets import VanitasCombo
 
 import cv2
 from PIL import Image, ImageDraw, ImageFont, ImageTk
@@ -19,9 +20,9 @@ from audio_preview import AudioPreview
 from subject_tracking import track_subject
 
 ROOT=Path(__file__).resolve().parent
-COLORS={"bg":"#10141e","panel":"#1d2533","surface":"#293244",
-        "text":"#f5f5fa","sub":"#aab5c7","red":"#de4057",
-        "blue":"#7cb4eb","yellow":"#efc56d","line":"#3c4659"}
+COLORS={"bg":"#0B0F14","panel":"#111820","surface":"#1D2A38",
+        "text":"#D9E0E8","sub":"#8793A3","red":"#3B82F6",
+        "blue":"#3B82F6","yellow":"#F97316","line":"#263342"}
 DEFAULT_CLIP=ROOT/"exports"/"videoplayback"/"videoplayback_v04_01_00243s_rev3.mp4"
 
 class ReviewEditor:
@@ -56,13 +57,13 @@ class ReviewEditor:
         self.app.after(400,lambda:self.open_file(str(clip) if clip else None,first=True))
 
     def label(self,parent,text,size=10,color="text",bold=False,**kw):
-        font=("Segoe UI Semibold" if bold else "Segoe UI",size)
+        font=("Archivo",size,"bold" if bold else "normal")
         return tk.Label(parent,text=text,font=font,bg=COLORS["bg"],fg=COLORS[color],
                         **kw)
 
     def btn(self,parent,text,command,important=False):
         return tk.Button(parent,text=text,command=command,relief="flat",bd=0,
-                         font=("Segoe UI Semibold",10),padx=13,pady=8,
+                         font=("Archivo",10),padx=13,pady=8,
                          cursor="hand2",fg="white",activeforeground="white",
                          bg=COLORS["red"] if important else COLORS["surface"],
                          activebackground="#ac2f48" if important else "#39465a")
@@ -174,7 +175,9 @@ class ReviewEditor:
         for name,width in (("start",68),("end",68),("text",312)):
             self.subtitles.heading(name,text=name.upper())
             self.subtitles.column(name,width=width,anchor="w")
-        caption_scroll=ttk.Scrollbar(caption_panel,orient="vertical",command=self.subtitles.yview)
+        caption_scroll=tk.Scrollbar(caption_panel,orient="vertical",command=self.subtitles.yview,
+            bg=COLORS["surface"],troughcolor=COLORS["bg"],activebackground=COLORS["blue"],
+            highlightthickness=0,bd=0,relief="flat")
         self.subtitles.configure(yscrollcommand=caption_scroll.set)
         self.subtitles.pack(side="left",fill="both",expand=True)
         caption_scroll.pack(side="right",fill="y")
@@ -192,7 +195,7 @@ class ReviewEditor:
         self.label(editrow,"sec",9,"sub").pack(side="left")
         self.caption_text=tk.Text(right,height=3,wrap="word",bg=COLORS["panel"],
                                   fg=COLORS["text"],insertbackground="white",
-                                  font=("Segoe UI",11),relief="flat",padx=10,pady=8)
+                                  font=("Archivo",11),relief="flat",padx=10,pady=8)
         self.caption_text.pack(fill="x")
         caprow=tk.Frame(right,bg=COLORS["bg"])
         caprow.pack(fill="x",pady=(8,0))
@@ -202,7 +205,7 @@ class ReviewEditor:
         stylerow=tk.Frame(right,bg=COLORS["bg"])
         stylerow.pack(fill="x",pady=(18,9))
         self.label(stylerow,"CAPTION STYLE",10,"sub",bold=True).pack(side="left",padx=(0,10))
-        self.style_picker=ttk.Combobox(stylerow,textvariable=self.style,state="readonly",
+        self.style_picker=VanitasCombo(stylerow,textvariable=self.style,state="readonly",
                      values=tuple(p.id for p in PRESETS),width=13)
         self.style_picker.pack(side="left")
         self.style_picker.bind("<<ComboboxSelected>>",lambda e:self.update_frame())
@@ -216,22 +219,22 @@ class ReviewEditor:
         statusbar.pack(fill="x",padx=21,pady=(3,12))
         self.label(statusbar,"●",12,"red").pack(side="left")
         tk.Label(statusbar,textvariable=self.status,anchor="w",bg=COLORS["bg"],
-                 fg=COLORS["sub"],font=("Segoe UI",10)).pack(side="left",padx=7)
+                 fg=COLORS["sub"],font=("Archivo",10)).pack(side="left",padx=7)
 
         style=ttk.Style()
         style.theme_use("clam")
         style.configure("Treeview",background=COLORS["panel"],
                         foreground=COLORS["text"],fieldbackground=COLORS["panel"],
-                        rowheight=26,borderwidth=0,font=("Segoe UI",9))
+                        rowheight=26,borderwidth=0,font=("Archivo",9))
         style.configure("Treeview.Heading",background=COLORS["surface"],
-                        foreground=COLORS["text"],font=("Segoe UI Semibold",9))
+                        foreground=COLORS["text"],font=("Archivo",9))
         style.map("Treeview",background=[("selected",COLORS["red"])])
         style.configure("TCombobox",fieldbackground=COLORS["surface"])
 
     def entry(self,parent,var,width=8):
         return tk.Entry(parent,textvariable=var,width=width,relief="flat",
                         bg=COLORS["panel"],fg=COLORS["text"],insertbackground="white",
-                        font=("Segoe UI",11))
+                        font=("Archivo",11))
 
     def browse(self):
         path=filedialog.askopenfilename(title="Open ClipForge v0.4 export",
@@ -600,7 +603,7 @@ class ReviewEditor:
             row.pack(fill="x",pady=5)
             self.label(row,f"Scene at {float(cut):.2f}s",11).pack(side="left")
             variable=tk.StringVar(value=self.data["transitions"].get(key,"hard"))
-            ttk.Combobox(row,textvariable=variable,state="readonly",
+            VanitasCombo(row,textvariable=variable,state="readonly",
                          values=("hard","dip"),width=14).pack(side="right")
             vars.append((key,variable))
         if not vars:self.label(container,"No cuts detected.",11,"sub").pack()
@@ -634,10 +637,10 @@ class ReviewEditor:
                              bg=COLORS["panel"],activebackground=COLORS["panel"],
                              cursor="hand2")
             button.pack()
-            tk.Label(card,text=preset.name,font=("Segoe UI Semibold",11),
+            tk.Label(card,text=preset.name,font=("Archivo",11),
                      bg=COLORS["panel"],fg=COLORS["text"],
                      anchor="w").pack(fill="x",pady=(6,0))
-            tk.Label(card,text=preset.sub,font=("Segoe UI",9),
+            tk.Label(card,text=preset.sub,font=("Archivo",9),
                      bg=COLORS["panel"],fg=COLORS["sub"],
                      anchor="w").pack(fill="x")
             def choose_style(style=preset.id):

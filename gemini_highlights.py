@@ -4,6 +4,7 @@ Max 6 section requests per run; no extra request per candidate.
 """
 from __future__ import annotations
 import base64
+import hashlib
 import time
 import json
 import math
@@ -292,7 +293,8 @@ def sampled_frames(src,offset,length,folder):
 
 def process_ai(src,dest,clips=3,seconds=30,style="blur",model=MODEL,log=print,
                dry_run=False,provider=None,visual=True,render=True,
-               context_aware=True,duration_model="base",boundary_spans=None):
+               context_aware=True,duration_model="base",boundary_spans=None,
+               vision_frames=None):
     src,dest=Path(src).resolve(),Path(dest).resolve()
     if not src.is_file() or src.suffix.lower() not in EXTS:
         raise ValueError("Select an existing supported local video file.")
@@ -317,8 +319,13 @@ def process_ai(src,dest,clips=3,seconds=30,style="blur",model=MODEL,log=print,
     if not dry_run:
         dest.mkdir(parents=True,exist_ok=True)
     cachefile=dest/"analysis-progress.json"
+    vision_signature = tuple(
+        (round(float(frame.timestamp_seconds), 3),
+         hashlib.sha256(frame.image_bytes).hexdigest()[:12])
+        for frame in (vision_frames or ())
+    )
     fingerprint=str((str(src),src.stat().st_size,src.stat().st_mtime_ns,
-                     model,seconds,visual,"editorial-intelligence-v10"))
+                     model,seconds,visual,vision_signature,"editorial-intelligence-v12"))
     completed={}
     if cachefile.exists():
         try:
@@ -342,7 +349,29 @@ def process_ai(src,dest,clips=3,seconds=30,style="blur",model=MODEL,log=print,
             if not chunk:
                 log(f"Audio segment {i} was empty, skipping.")
                 continue
-            frames=sampled_frames(src,offset,length,Path(work)) if visual else []
+            frames = []
+            if visual:
+                local_frames = sampled_frames(src,offset,length,Path(work))
+                if vision_frames:
+                    frames = [
+                        (max(0.0, float(frame.timestamp_seconds) - offset), frame.image_bytes)
+                        for frame in vision_frames
+                        if offset <= float(frame.timestamp_seconds) < offset + length
+                    ]
+                    # Keep the MCP key frames, then add local samples where coverage
+                    # is sparse (especially near the end of long sources).
+                    for timestamp, image_bytes in local_frames:
+                        if all(abs(timestamp - existing_time) >= 1.5 for existing_time, _ in frames):
+                            frames.append((timestamp, image_bytes))
+                    frames.sort(key=lambda item: item[0])
+                    if len(frames) > 12:
+                        indices = [
+                            round(i * (len(frames) - 1) / 11)
+                            for i in range(12)
+                        ]
+                        frames = [frames[index] for index in indices]
+                else:
+                    frames = local_frames
             log(f"Gemini request {i}/{len(windows)} ({round(offset)}s, {len(chunk)//1024} KiB, {len(frames)} frames)")
             fn=provider or request_gemini
             try:
@@ -386,7 +415,7 @@ def process_ai(src,dest,clips=3,seconds=30,style="blur",model=MODEL,log=print,
                              return_ranked=True)
     if not picks:
         raise RuntimeError("No complete story candidates passed duration/boundary checks. Try another model or disable context-aware duration; "+str(len(errors))+" sections failed.")
-    manifest={"tool":"VAW ClipForge","version":"v1.0",
+    manifest={"tool":"VAW ClipForge","version":"v1.2",
               "method":"Gemini multimodal editorial analysis + deterministic weighted ranking + local Whisper boundary alignment",
               "source":str(src),"model":active_model,"created":datetime.now().isoformat(),
               "duration_policy":"context-aware soft target; 12-180s; natural sentence boundaries",
@@ -394,7 +423,8 @@ def process_ai(src,dest,clips=3,seconds=30,style="blur",model=MODEL,log=print,
               "retention_note":"AI editorial estimate only; not a prediction of actual views, watch time, or platform performance.",
               "visual_analysis":"sparse timestamped sample frames; generic visual-content classification; no identity recognition",
               "target_seconds":seconds,"context_aware":bool(context_aware),
-              "local_boundary_count":len(sentences),"sections_analyzed":len(windows),
+              "local_boundary_count":len(sentences),"transcript_spans":sentences,
+              "sections_analyzed":len(windows),
               "sections_failed":errors,"candidate_count":len(ranked),
               "ranked_candidates":ranked,"clips":[]}
     if not dry_run:
@@ -421,3 +451,142 @@ def process_ai(src,dest,clips=3,seconds=30,style="blur",model=MODEL,log=print,
         (dest/"ai-highlights.json").write_text(json.dumps(manifest,indent=2),encoding="utf-8")
         log(f"Editorial report saved: {report.name} ({len(ranked)} candidates ranked).")
     return manifest
+
+
+def request_story_compositions(events, key=None, model=MODEL, provider=None):
+    """One compact global synthesis request for both Story Composer modes.
+
+    Only candidate-level editorial summaries and timestamps are sent. The full
+    source transcript and original video remain on the user's machine.
+    """
+    from clipforge_contracts import SegmentRole
+
+    allowed_roles = {role.value for role in SegmentRole}
+    compact = []
+    for event in events:
+        compact.append({
+            "event_id": event.event_id,
+            "start": round(float(event.start_seconds), 3),
+            "end": round(float(event.end_seconds), 3),
+            "topic": str(event.topic)[:120],
+            "summary": str(event.summary)[:320],
+            "visual_summary": str(getattr(event, "visual_summary", ""))[:320],
+            "confidence": round(float(event.confidence), 3),
+            "tags": list(event.tags[:6]),
+        })
+    if len(compact) < 2:
+        return {
+            "composition_orders": {},
+            "event_roles": {},
+            "event_dependencies": {},
+        }
+    if len(compact) > 24:
+        compact = sorted(compact, key=lambda row: row["confidence"], reverse=True)[:24]
+    if not re.fullmatch(r"[a-z0-9][a-z0-9._-]{2,100}", model):
+        raise ValueError("Invalid model identifier.")
+    if provider is not None:
+        raw = provider(compact, key, model)
+    else:
+        key = key or load_key()
+        prompt = (
+            "You are an experienced short-form video editor. Build TWO distinct "
+            "compositions from these complete candidate moments. Smart Compilation "
+            "should favor strong, varied moments and a clear overall rhythm. "
+            "Narrative Reconstruction should favor a coherent beginning, context, "
+            "development and payoff; reorder only when the supplied summaries support "
+            "it. Preserve cause/effect and factual dependencies. Never invent facts. "
+            "Use only supplied event IDs. Each composition must contain 2-8 unique "
+            "events, avoid overlapping source ranges, and fit within 180 seconds in "
+            "total. Do not cut or shorten an event. If a valid composition cannot be "
+            "made, return an empty event_ids list for that strategy. Assign each "
+            "event one role from hook, context, development, evidence, payoff, bridge, "
+            "support. 'requires' lists prerequisite event IDs that must appear first. "
+            "Return JSON only, shaped as: "
+            '{"smart_compilation":{"event_ids":[],"roles":{},"requires":{}},'
+            '"narrative_reconstruction":{"event_ids":[],"roles":{},"requires":{}}}. '
+            "Candidates: " + json.dumps(compact, ensure_ascii=False)
+        )
+        payload = {
+            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+            "generationConfig": {
+                "responseMimeType": "application/json",
+                "temperature": 0.15,
+                "maxOutputTokens": 4096,
+            },
+        }
+        request = urllib.request.Request(
+            ENDPOINT.format(model=model),
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json", "x-goog-api-key": key},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=90) as response:
+                envelope = json.loads(response.read(300001))
+        except urllib.error.HTTPError as exc:
+            if exc.code in (401, 403):
+                raise RuntimeError("Gemini rejected the Story Composer request. Check the API key.") from None
+            if exc.code == 429:
+                raise RuntimeError("Gemini quota reached during Story Composer planning.") from None
+            raise RuntimeError(f"Story Composer request failed (HTTP {exc.code}).") from None
+        except urllib.error.URLError:
+            raise RuntimeError("Cannot connect to Gemini for Story Composer planning.") from None
+        except (ValueError, TypeError):
+            raise RuntimeError("Gemini returned an invalid Story Composer response.") from None
+        parts = []
+        for candidate in envelope.get("candidates", []):
+            parts.extend(
+                str(part.get("text", ""))
+                for part in candidate.get("content", {}).get("parts", [])
+                if "text" in part
+            )
+        if not parts:
+            raise RuntimeError("Gemini returned an empty Story Composer response.")
+        try:
+            raw = json.loads("\n".join(parts).strip())
+        except (ValueError, TypeError):
+            raise RuntimeError("Gemini returned malformed Story Composer JSON.") from None
+
+    if not isinstance(raw, dict):
+        raise RuntimeError("Story Composer provider returned an invalid result.")
+    valid_ids = {row["event_id"] for row in compact}
+    orders = {}
+    roles = {}
+    dependencies = {}
+    for strategy in ("smart_compilation", "narrative_reconstruction"):
+        section = raw.get(strategy, {})
+        if not isinstance(section, dict):
+            continue
+        ids = []
+        raw_ids = section.get("event_ids", [])
+        if not isinstance(raw_ids, list):
+            raw_ids = []
+        for value in raw_ids:
+            event_id = str(value)
+            if event_id in valid_ids and event_id not in ids:
+                ids.append(event_id)
+            if len(ids) == 8:
+                break
+        if len(ids) >= 2:
+            orders[strategy] = tuple(ids)
+        role_map = section.get("roles", {})
+        if isinstance(role_map, dict):
+            for event_id, role in role_map.items():
+                if event_id in valid_ids and role in allowed_roles:
+                    roles[event_id] = role
+        dependency_map = section.get("requires", {})
+        if isinstance(dependency_map, dict):
+            for event_id, required in dependency_map.items():
+                if event_id not in valid_ids or not isinstance(required, list):
+                    continue
+                safe = tuple(
+                    value for value in required
+                    if value in valid_ids and value != event_id
+                )
+                if safe:
+                    dependencies[event_id] = safe
+    return {
+        "composition_orders": orders,
+        "event_roles": roles,
+        "event_dependencies": dependencies,
+    }
