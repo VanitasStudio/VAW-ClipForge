@@ -20,9 +20,9 @@ from audio_preview import AudioPreview
 from subject_tracking import track_subject
 
 ROOT=Path(__file__).resolve().parent
-COLORS={"bg":"#0B0F14","panel":"#111820","surface":"#1D2A38",
-        "text":"#D9E0E8","sub":"#8793A3","red":"#3B82F6",
-        "blue":"#3B82F6","yellow":"#F97316","line":"#263342"}
+COLORS={"bg":"#05070B","panel":"#101827","surface":"#172235",
+        "text":"#DCE6F5","sub":"#8E9DB4","red":"#075BFF",
+        "blue":"#075BFF","yellow":"#20BFFF","line":"#29364B"}
 DEFAULT_CLIP=ROOT/"exports"/"videoplayback"/"videoplayback_v04_01_00243s_rev3.mp4"
 
 class ReviewEditor:

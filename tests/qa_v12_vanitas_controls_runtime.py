@@ -42,6 +42,8 @@ class VanitasControlsRuntimeTests(unittest.TestCase):
         self.root.update()
         self.assertIsNotNone(combo._popup)
         self.assertEqual(combo._listbox.size(), 2)
+        self.assertGreater(combo._popup.winfo_rootx(), -100000)
+        self.assertGreater(combo._popup.winfo_rooty(), -100000)
         combo._listbox.event_generate("<ButtonPress-1>",x=12,y=45)
         combo._listbox.event_generate("<ButtonRelease-1>",x=12,y=45)
         self.root.update()
@@ -116,7 +118,7 @@ class VanitasControlsRuntimeTests(unittest.TestCase):
         self.root.update()
         self.assertTrue(value.get())
 
-    def test_chamfered_button_invokes_and_supports_state_updates(self):
+    def test_rounded_button_invokes_and_supports_state_updates(self):
         calls = []
         button = VanitasButton(self.root, text="Run", command=lambda: calls.append("run"), primary=True)
         button.pack()

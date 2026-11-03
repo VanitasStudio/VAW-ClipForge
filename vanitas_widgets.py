@@ -11,18 +11,19 @@ import ctypes
 from pathlib import Path
 
 PALETTE = {
-    "bg": "#0B0F14",
-    "surface": "#111820",
-    "field": "#18222D",
-    "raised": "#1D2A38",
-    "hover": "#26384C",
-    "line": "#263342",
-    "text": "#D9E0E8",
-    "muted": "#8793A3",
-    "blue": "#3B82F6",
-    "blue_hi": "#60A5FA",
-    "orange": "#F97316",
+    "bg": "#05070B",
+    "surface": "#101827",
+    "field": "#0B111C",
+    "raised": "#172235",
+    "hover": "#1C2B42",
+    "line": "#29364B",
+    "text": "#DCE6F5",
+    "muted": "#8E9DB4",
+    "blue": "#075BFF",
+    "blue_hi": "#20BFFF",
+    "orange": "#20BFFF",
     "white": "#FFFFFF",
+    "silver": "#DCE6F5",
 }
 
 
@@ -150,12 +151,24 @@ class VanitasCombo(tk.Frame):
         width = max(self.winfo_width(), 150)
         rows = min(len(self.values), 8)
         row_height = 32
+        root = self.winfo_toplevel()
+        root.update_idletasks()
         x = self.winfo_rootx()
-        y = self.winfo_rooty() + self.winfo_height() + 3
-        screen_h = self.winfo_screenheight()
-        if y + rows * row_height + 4 > screen_h:
-            y = max(0, self.winfo_rooty() - rows * row_height - 4)
-        popup.geometry(f"{width}x{rows * row_height + 4}+{x}+{y}")
+        below_y = self.winfo_rooty() + self.winfo_height() + 3
+        popup_height = rows * row_height + 4
+        # Preserve signed virtual-desktop coordinates for secondary monitors.
+        vx, vy = self.winfo_vrootx(), self.winfo_vrooty()
+        vw, vh = self.winfo_vrootwidth(), self.winfo_vrootheight()
+        x = max(vx, min(x, vx + max(0, vw - width)))
+        if below_y + popup_height <= vy + vh:
+            y = below_y
+        else:
+            y = self.winfo_rooty() - popup_height - 3
+        y = max(vy, min(y, vy + max(0, vh - popup_height)))
+        geometry = f"{width}x{popup_height}{x:+d}{y:+d}"
+        popup.geometry(geometry)
+        popup.update_idletasks()
+        popup.geometry(geometry)
         shell = tk.Frame(popup, bg=PALETTE["line"], padx=1, pady=1)
         shell.pack(fill="both", expand=True)
         listing = tk.Listbox(
@@ -189,7 +202,14 @@ class VanitasCombo(tk.Frame):
         self._draw_arrow(True)
 
     def _choose_after_click(self, event=None):
-        # Listbox's class binding updates selection after widget bindings.
+        # Select explicitly: returning "break" suppresses Listbox class selection.
+        listing = self._listbox
+        if listing is not None and event is not None:
+            index = listing.nearest(event.y)
+            if 0 <= index < listing.size():
+                listing.selection_clear(0, "end")
+                listing.selection_set(index)
+                listing.activate(index)
         self.after_idle(self._choose)
         return "break"
 
@@ -266,14 +286,15 @@ class VanitasCombo(tk.Frame):
 
 
 class VanitasScrollbar(tk.Canvas):
-    """Canvas-drawn scrollbar with chamfered thumb and no Windows native chrome."""
+    """Canvas-drawn scrollbar with a rounded thumb and no Windows native chrome."""
 
     def __init__(self, master, *, command=None, orient="vertical", **kwargs):
         self.command = command
         self.orient = orient
         self.first, self.last = 0.0, 1.0
         self._drag_offset = None
-        width = 14 if orient == "vertical" else 90
+        self._hovering = False
+        width = 18 if orient == "vertical" else 90
         height = 90 if orient == "vertical" else 14
         super().__init__(
             master, width=width if orient == "vertical" else height,
@@ -286,6 +307,8 @@ class VanitasScrollbar(tk.Canvas):
         self.bind("<B1-Motion>", self._drag)
         self.bind("<ButtonRelease-1>", self._release)
         self.bind("<MouseWheel>", self._wheel)
+        self.bind("<Enter>", self._on_enter)
+        self.bind("<Leave>", self._on_leave)
 
     def set(self, first, last):
         self.first, self.last = float(first), float(last)
@@ -308,35 +331,34 @@ class VanitasScrollbar(tk.Canvas):
         if self.orient == "vertical":
             self.create_rectangle(3, 0, width - 3, height, fill=PALETTE["bg"], outline="")
             _, top, bottom = self._metrics()
-            left, right = 2, width - 2
-            points = [left + 3, top, right - 3, top, right, top + 4,
-                      right, bottom - 4, right - 3, bottom, left + 3, bottom,
-                      left, bottom - 4, left, top + 4]
+            left, right = 3, width - 3
+            radius = min(6, max(2, (right - left) // 2))
+            points = [left + radius, top, right - radius, top,
+                      right, top + radius, right, bottom - radius,
+                      right - radius, bottom, left + radius, bottom,
+                      left, bottom - radius, left, top + radius]
         else:
             self.create_rectangle(0, 3, width, height - 3, fill=PALETTE["bg"], outline="")
             _, left, right = self._metrics()
-            top, bottom = 2, height - 2
-            points = [left + 4, top, right - 4, top, right, top + 3,
-                      right, bottom - 3, right - 4, bottom, left + 4, bottom,
-                      left, bottom - 3, left, top + 3]
-        color = PALETTE["blue"] if self._drag_offset is not None else PALETTE["raised"]
-        self.create_polygon(points, fill=color, outline=PALETTE["line"], width=1)
-        if self.orient == "vertical":
-            mid = (top + bottom) / 2
-            self.create_line(width * .38, mid - 4, width * .62, mid - 4,
-                             fill=PALETTE["muted"], width=1)
-            self.create_line(width * .38, mid, width * .62, mid,
-                             fill=PALETTE["muted"], width=1)
-            self.create_line(width * .38, mid + 4, width * .62, mid + 4,
-                             fill=PALETTE["muted"], width=1)
-        else:
-            mid = (left + right) / 2
-            self.create_line(mid - 4, height * .38, mid - 4, height * .62,
-                             fill=PALETTE["muted"], width=1)
-            self.create_line(mid, height * .38, mid, height * .62,
-                             fill=PALETTE["muted"], width=1)
-            self.create_line(mid + 4, height * .38, mid + 4, height * .62,
-                             fill=PALETTE["muted"], width=1)
+            top, bottom = 3, height - 3
+            radius = min(6, max(2, (bottom - top) // 2))
+            points = [left + radius, top, right - radius, top,
+                      right, top + radius, right, bottom - radius,
+                      right - radius, bottom, left + radius, bottom,
+                      left, bottom - radius, left, top + radius]
+        active = self._drag_offset is not None or self._hovering
+        color = PALETTE["blue"] if active else "#52627A"
+        outline = PALETTE["blue_hi"] if active else "#52627A"
+        self.create_polygon(points, fill=color, outline=outline, width=1, smooth=True)
+
+    def _on_enter(self, _event=None):
+        self._hovering = True
+        self._draw()
+
+    def _on_leave(self, _event=None):
+        if self._drag_offset is None:
+            self._hovering = False
+            self._draw()
 
     def _press(self, event):
         length, start, end = self._metrics()
@@ -373,7 +395,7 @@ class VanitasScrollbar(tk.Canvas):
 
 
 class VanitasSlider(tk.Canvas):
-    """Canvas-drawn horizontal slider with a chamfered Vanitas thumb."""
+    """Canvas-drawn horizontal slider with a rounded Vanitas thumb."""
 
     def __init__(self, master, *, variable=None, from_=0, to=100, resolution=1,
                  command=None, length=300, showvalue=False, bg=None,
@@ -415,9 +437,10 @@ class VanitasSlider(tk.Canvas):
         x = left + (right-left) * self._fraction()
         self.create_line(left, y, right, y, fill=self.track_color, width=5, capstyle="round")
         self.create_line(left, y, x, y, fill=self.active_color, width=5, capstyle="round")
-        self.create_polygon(x-7,y-6,x+5,y-6,x+8,y-3,x+8,y+3,
-                            x+5,y+6,x-7,y+6,x-9,y+4,x-9,y-4,
-                            fill=PALETTE["text"],outline=PALETTE["blue"],width=1)
+        self.create_polygon(x-7,y-6,x+7,y-6,x+9,y-4,x+9,y+4,
+                            x+7,y+6,x-7,y+6,x-9,y+4,x-9,y-4,
+                            fill=PALETTE["text"],outline=PALETTE["blue"],width=1,
+                            smooth=True)
         if self.showvalue:
             self.create_text(self.winfo_width()-5,y,text=f"{self.variable.get()}",
                              fill=PALETTE["muted"],font=("Archivo",8),anchor="e")
@@ -614,7 +637,7 @@ class VanitasSpinbox(tk.Frame):
 
 
 class VanitasButton(tk.Canvas):
-    """Chamfered Vanitas action button with a fully custom-drawn surface."""
+    """Rounded Vanitas action button with a fully custom-drawn surface."""
 
     def __init__(self, master, *, primary=False, **kwargs):
         self.primary = primary
@@ -626,7 +649,7 @@ class VanitasButton(tk.Canvas):
         self.pady = int(kwargs.pop("pady", 8))
         self._base = PALETTE["blue"] if primary else PALETTE["raised"]
         self._hover = PALETTE["blue_hi"] if primary else PALETTE["hover"]
-        self._fg = kwargs.pop("fg", PALETTE["white"])
+        self._fg = kwargs.pop("fg", PALETTE["bg"] if primary else PALETTE["text"])
         self._hovering = False
         self._pressed = False
         super().__init__(master, bg=master.cget("bg"), highlightthickness=0,
@@ -657,12 +680,12 @@ class VanitasButton(tk.Canvas):
         else:
             fill, fg = self._base, self._fg
         border = PALETTE["blue_hi"] if self.primary and self._hovering else PALETTE["line"]
-        points = [5, 1, width - 7, 1, width - 1, 7, width - 1, height - 6,
-                  width - 6, height - 1, 5, height - 1, 1, height - 5, 1, 6]
-        self.create_polygon(points, fill=fill, outline=border, width=1)
-        self.create_line(6, 2, width - 8, 2,
-                         fill=PALETTE["blue_hi"] if self.primary else PALETTE["hover"],
-                         width=1)
+        radius = 9
+        points = [radius, 1, width-radius, 1, width-1, radius,
+                  width-1, height-radius, width-radius, height-1,
+                  radius, height-1, 1, height-radius, 1, radius]
+        self.create_polygon(points, fill=fill, outline=border, width=1, smooth=True)
+
         self.create_text(width / 2, height / 2, text=self.text,
                          fill=fg, font=self.font)
         tk.Canvas.configure(self, cursor="arrow" if self.state == "disabled" else "hand2")

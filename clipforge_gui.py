@@ -25,10 +25,10 @@ from PIL import ImageTk
 BUNDLE_ROOT=Path(getattr(sys,"_MEIPASS",Path(__file__).resolve().parent))
 ROOT=Path(sys.executable).resolve().parent if getattr(sys,"frozen",False) else Path(__file__).resolve().parent
 ASSET_ROOT=BUNDLE_ROOT/"assets"
-C={"bg":"#0B0F14","card":"#111820","white":"#D9E0E8",
-   "muted":"#8793A3","red":"#3B82F6","blue":"#3B82F6",
-   "orange":"#F97316","line":"#263342","green":"#79CBA5",
-   "field":"#18222D","raised":"#1D2A38","hover":"#26384C"}
+C={"bg":"#05070B","card":"#101827","white":"#DCE6F5",
+   "muted":"#8E9DB4","red":"#075BFF","blue":"#075BFF",
+   "orange":"#20BFFF","line":"#29364B","green":"#79CBA5",
+   "field":"#0B111C","raised":"#172235","hover":"#1C2B42"}
 
 def load_brand_fonts():
     """Load bundled Vanitas typefaces privately; no system installation required."""
@@ -92,12 +92,12 @@ class ClipForge:
                         font=font,anchor="w",justify="left")
     def button(self,parent,text,fn,primary=False):
         normal=C["red"] if primary else C["raised"]
-        hover="#60A5FA" if primary else "#2E4054"
+        hover="#20BFFF" if primary else "#263A58"
         return VanitasButton(parent,text=text,command=fn,primary=primary,
                              font=("Archivo",10,"bold"),padx=15,pady=9)
     def entry(self,parent,var):
         return VanitasEntry(parent,textvariable=var,font=("Archivo",10),
-                            bg=C["field"],fg=C["white"],insertbackground="white")
+                            bg=C["field"],fg=C["white"],insertbackground=C["white"])
     def create_ui(self):
         # Refined desktop layout: clear sections, readable spacing and a fixed action area.
         shell=tk.Frame(self.root,bg=C["bg"])
@@ -290,8 +290,8 @@ class ClipForge:
         loghead=tk.Frame(logcard,bg=C["card"])
         loghead.pack(fill="x",padx=12,pady=(7,2))
         label(loghead,"ACTIVITY",9,"muted",True).pack(side="left")
-        self.logview=tk.Text(logcard,height=3,bg="#0E141B",fg="#D9E0E8",
-            insertbackground="white",font=("Archivo",9),relief="flat",
+        self.logview=tk.Text(logcard,height=3,bg="#0E131B",fg="#D9E0E8",
+            insertbackground=C["white"],font=("Archivo",9),relief="flat",
             wrap="word",padx=11,pady=8,bd=0)
         self.logview.pack(fill="both",expand=True,padx=8,pady=(2,8))
         self.log("Ready.")

@@ -116,7 +116,7 @@ class CompositionReview:
         self.root.title("VAW ClipForge — Composition Review Studio")
         self.root.geometry("1180x850")
         self.root.minsize(1020, 760)
-        self.root.configure(bg="#0B0F14")
+        self.root.configure(bg="#05070B")
         self.selected = 0
         self.caption_span_id = None
         self.visible_caption_ids = []
@@ -140,7 +140,7 @@ class CompositionReview:
         self._select(0)
 
     def _build_ui(self):
-        bg, card, white, muted = "#0B0F14", "#111820", "#D9E0E8", "#8793A3"
+        bg, card, white, muted = "#05070B", "#101827", "#DCE6F5", "#8793A3"
         header = tk.Frame(self.root, bg=bg)
         header.pack(fill="x", padx=20, pady=(16, 8))
         tk.Label(
@@ -149,25 +149,25 @@ class CompositionReview:
         ).pack(side="left")
         tk.Label(
             header, text=f"{self.edl.strategy.value.replace('_', ' ').title()}",
-            bg="#1D2A38", fg="#D9E0E8", padx=10, pady=5,
+            bg="#172235", fg="#DCE6F5", padx=10, pady=5,
             font=("Archivo", 9),
         ).pack(side="right")
 
         body = tk.Frame(self.root, bg=bg)
         body.pack(fill="both", expand=True, padx=20, pady=8)
-        left = tk.Frame(body, bg=card, highlightbackground="#263342", highlightthickness=1)
+        left = tk.Frame(body, bg=card, highlightbackground="#29364B", highlightthickness=1)
         left.pack(side="left", fill="both", expand=True, padx=(0, 10))
-        right = tk.Frame(body, bg=card, highlightbackground="#263342", highlightthickness=1)
+        right = tk.Frame(body, bg=card, highlightbackground="#29364B", highlightthickness=1)
         right.pack(side="right", fill="y", padx=(10, 0))
 
         tk.Label(left, text="COMPOSITION TIMELINE", bg=card, fg=muted,
                  font=("Archivo", 9)).pack(anchor="w", padx=14, pady=(12, 6))
-        self.timeline_canvas=tk.Canvas(left,height=96,bg="#18222D",highlightthickness=0)
+        self.timeline_canvas=tk.Canvas(left,height=96,bg="#0B111C",highlightthickness=0)
         self.timeline_canvas.pack(fill="x",padx=12,pady=(0,8))
         self.timeline_canvas.bind("<Button-1>",self._timeline_click)
         self.timeline_canvas.bind("<Configure>",lambda _event:self._draw_timeline())
         self.listbox = tk.Listbox(
-            left, bg="#18222D", fg=white, selectbackground="#3B82F6",
+            left, bg="#0B111C", fg=white, selectbackground="#075BFF",
             selectforeground=white, relief="flat", bd=0,
             font=("Consolas", 10), activestyle="none",
         )
@@ -182,7 +182,7 @@ class CompositionReview:
 
         tk.Label(right, text="SOURCE PREVIEW", bg=card, fg=muted,
                  font=("Archivo", 9)).pack(anchor="w", padx=16, pady=(12, 5))
-        self.preview_label=tk.Label(right,bg="#18222D",fg=muted,text="Select a segment")
+        self.preview_label=tk.Label(right,bg="#0B111C",fg=muted,text="Select a segment")
         self.preview_label.pack(fill="x",padx=16,pady=(0,10))
         tk.Label(right, text="SEGMENT DETAILS", bg=card, fg=white,
                  font=("Archivo", 11)).pack(anchor="w", padx=16, pady=(4, 8))
@@ -204,13 +204,13 @@ class CompositionReview:
         tk.Label(right,text="CAPTIONS IN THIS SEGMENT",bg=card,fg=muted,
                  font=("Archivo",9)).pack(anchor="w",padx=16,pady=(15,4))
         self.caption_list=tk.Listbox(
-            right,height=3,bg="#18222D",fg=white,selectbackground="#3B82F6",
+            right,height=3,bg="#0B111C",fg=white,selectbackground="#075BFF",
             relief="flat",bd=0,font=("Archivo",8),activestyle="none",
         )
         self.caption_list.pack(fill="x",padx=16)
         self.caption_list.bind("<<ListboxSelect>>",self._on_caption_select)
         VanitasEntry(
-            right,textvariable=self.caption_var,bg="#18222D",fg=white,
+            right,textvariable=self.caption_var,bg="#0B111C",fg=white,
             insertbackground="white",font=("Archivo",9),
         ).pack(fill="x",padx=16,pady=(5,4),ipady=6)
         self._button(right,"Apply Caption Text",self._apply_caption).pack(anchor="e",padx=16,pady=(0,8))
@@ -257,10 +257,10 @@ class CompositionReview:
                              font=("Archivo",9,"bold"),padx=12,pady=8)
 
     def _field(self, parent, label, variable):
-        tk.Label(parent, text=label, bg="#111820", fg="#8793A3",
+        tk.Label(parent, text=label, bg="#101827", fg="#8E9DB4",
                  font=("Archivo", 9)).pack(anchor="w", padx=16, pady=(8, 3))
         VanitasEntry(
-            parent,textvariable=variable,bg="#18222D",fg="#D9E0E8",
+            parent,textvariable=variable,bg="#0B111C",fg="#DCE6F5",
             insertbackground="white",font=("Archivo",10),
         ).pack(fill="x",padx=16,ipady=7)
 
