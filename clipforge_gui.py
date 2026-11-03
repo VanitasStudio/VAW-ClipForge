@@ -1,4 +1,4 @@
-"""VAW ClipForge v1.0 — AI Editorial Intelligence desktop application."""
+"""VAW ClipForge v1.2 â€” AI editorial intelligence and story composition desktop application."""
 from __future__ import annotations
 import os
 import sys
@@ -13,7 +13,7 @@ from tkinter import filedialog, messagebox, simpledialog, ttk
 from clip_engine import process as process_local
 from gemini_highlights import process_ai, MODEL
 from secure_config import save_key, has_key, delete_key
-from test_gemini import test_gemini_connection
+from gemini_connection import test_gemini_connection
 from smart_reframe import export_v04
 from url_source import (validate_url,check_link,fetch_video,clear_cache,cache_stats)
 from subtitle_presets import PRESETS, preview_image
@@ -39,6 +39,10 @@ class ClipForge:
         self.dest=tk.StringVar(value=str(ROOT/"exports"))
         self.count=tk.IntVar(value=3)
         self.seconds=tk.IntVar(value=30)
+        self.standalone_output=tk.BooleanVar(value=True)
+        self.smart_compilation_output=tk.BooleanVar(value=True)
+        self.narrative_output=tk.BooleanVar(value=True)
+        self.story_seconds=tk.IntVar(value=60)
         self.context_duration=tk.BooleanVar(value=True)
         self.layout=tk.StringVar(value="blur")
         self.mode=tk.StringVar(value="Gemini AI (audio)")
@@ -46,6 +50,7 @@ class ClipForge:
         self.caption=tk.BooleanVar(value=True)
         self.burn=tk.BooleanVar(value=True)
         self.visual=tk.BooleanVar(value=True)
+        self.video_vision=tk.BooleanVar(value=False)
         self.autoframe=tk.BooleanVar(value=True)
         self.subject_mode=tk.StringVar(value="universal")
         self.scenedetect=tk.BooleanVar(value=True)
@@ -141,7 +146,7 @@ class ClipForge:
             body.pack(fill="x",padx=17,pady=(2,14))
             return body
 
-        # 01 — Source and destination.
+        # 01 â€” Source and destination.
         source=section("01  SOURCE VIDEO","Choose a local file or paste a public video URL.")
         sourcebar=tk.Frame(source,bg=C["card"])
         sourcebar.pack(fill="x",pady=(0,8))
@@ -164,7 +169,7 @@ class ClipForge:
         self.entry(destrow,self.dest).pack(side="left",fill="x",expand=True,ipady=8)
         self.button(destrow,"Choose Folder",self.browse_out).pack(side="left",padx=(9,0))
 
-        # 02 — Output settings.
+        # 02 â€” Output settings.
         output=section("02  CLIP SETTINGS","Duration is a soft target. Complete story boundaries take priority.")
         for col in range(4):
             output.grid_columnconfigure(col,weight=1)
@@ -189,7 +194,35 @@ class ClipForge:
                                     values=opts[0],width=11)
             widget.pack(anchor="w",fill="x",ipady=3)
 
-        # 03 — AI engine.
+        # 02B â€” Output modes.
+        outputs=section("02B  PRODUCTION OUTPUTS","Choose which deliverables ClipForge creates. Both Story Composer strategies are enabled by default.")
+        for col in range(2):
+            outputs.grid_columnconfigure(col,weight=1)
+        output_checks=[
+            (self.standalone_output,"Standalone Highlights",0,0),
+            (self.smart_compilation_output,"Story Composer â€” Smart Compilation",0,1),
+            (self.narrative_output,"Story Composer â€” Narrative Reconstruction",1,0),
+        ]
+        for variable,text,row,col in output_checks:
+            tk.Checkbutton(
+                outputs,text=text,variable=variable,anchor="w",
+                bg=C["card"],fg=C["white"],selectcolor="#354158",
+                activebackground=C["card"],activeforeground=C["white"],
+                font=("Segoe UI",9),padx=2,pady=5,
+                highlightthickness=0,
+            ).grid(row=row,column=col,sticky="w",padx=(0,12))
+        story_target=tk.Frame(outputs,bg=C["card"])
+        story_target.grid(row=1,column=1,sticky="e")
+        label(story_target,"COMPOSED DURATION (12â€“180s)",9,"muted",True).pack(side="left",padx=(0,9))
+        tk.Spinbox(
+            story_target,from_=12,to=180,width=7,textvariable=self.story_seconds,
+            bg="#202a3b",fg=C["white"],insertbackground="white",
+            buttonbackground="#354158",relief="flat",bd=0,
+            font=("Segoe UI",10),highlightthickness=1,
+            highlightbackground=C["line"],
+        ).pack(side="left",ipady=3)
+
+        # 03 â€” AI engine.
         ai=section("03  AI HIGHLIGHT ENGINE","Gemini finds complete stories; offline audio mode is available as a fallback.")
         ai.grid_columnconfigure(1,weight=1)
         label(ai,"DETECTION MODE",9,"muted",True).grid(row=0,column=0,sticky="w",pady=(0,6))
@@ -212,7 +245,7 @@ class ClipForge:
         self.button(keyrow,"Test Connection",self.test_api).pack(side="right")
         self.refresh_key_status()
 
-        # 04 — Intelligent processing.
+        # 04 â€” Intelligent processing.
         smart=section("04  SMART PROCESSING","Choose which local analysis and enhancement stages run during export.")
         smart.grid_columnconfigure(0,weight=1)
         smart.grid_columnconfigure(1,weight=1)
@@ -223,6 +256,7 @@ class ClipForge:
             (self.context_duration,"Context-aware duration (local Whisper)",1,1),
             (self.autoframe,"Auto-reframe universal subjects",2,0),
             (self.scenedetect,"Intelligent scene detection",2,1),
+            (self.video_vision,"Extra local frame sampling (Video Vision MCP)",3,0),
         ]
         for var,text,row,col in checks:
             tk.Checkbutton(smart,text=text,variable=var,anchor="w",
@@ -231,14 +265,16 @@ class ClipForge:
                 font=("Segoe UI",9),padx=2,pady=5,
                 highlightthickness=0).grid(row=row,column=col,sticky="w",padx=(0,12))
         focus=tk.Frame(smart,bg=C["card"])
-        focus.grid(row=3,column=0,columnspan=2,sticky="ew",pady=(8,0))
+        focus.grid(row=4,column=0,columnspan=2,sticky="ew",pady=(8,0))
         label(focus,"AUTO FOCUS",9,"muted",True).pack(side="left",padx=(0,12))
         ttk.Combobox(focus,textvariable=self.subject_mode,state="readonly",
             values=["universal","people","motion","center"],width=16).pack(side="left")
         label(focus,"Universal works with animation, icons, diagrams and objects.",
               9,"muted").pack(side="left",padx=12)
+        label(smart,"Video Vision MCP is optional. It samples extra local frames; Gemini receives only selected compressed frames.",
+              8,"muted").grid(row=5,column=0,columnspan=2,sticky="w",pady=(5,0))
 
-        # 05 — Captions.
+        # 05 â€” Captions.
         captions=section("05  SUBTITLE STYLE","Select a visual preset. All Capital forces every spoken word into uppercase.")
         caprow=tk.Frame(captions,bg=C["card"])
         caprow.pack(fill="x")
@@ -248,7 +284,7 @@ class ClipForge:
         self.caption_picker.pack(side="left")
         self.caption_picker.bind("<<ComboboxSelected>>",self.set_caption_from_label)
         self.button(caprow,"Browse Styles",self.show_caption_styles).pack(side="left",padx=(9,0))
-        self.caption_hint=label(captions,"Karaoke — word-by-word crimson highlight.",9,"muted")
+        self.caption_hint=label(captions,"Karaoke â€” word-by-word crimson highlight.",9,"muted")
         self.caption_hint.pack(anchor="w",pady=(9,0))
         label(captions,"Subtitle files (.SRT and .ASS) are saved beside each exported clip.",
               9,"muted").pack(anchor="w",pady=(4,0))
@@ -288,7 +324,7 @@ class ClipForge:
             return
         self.caption_style.set(preset.id)
         if hasattr(self,"caption_hint"):
-            self.caption_hint.configure(text=f"{preset.name} — {preset.sub}.")
+            self.caption_hint.configure(text=f"{preset.name} â€” {preset.sub}.")
         self.log("Subtitle mode selected: "+preset.name)
 
     def show_caption_styles(self):
@@ -315,7 +351,7 @@ class ClipForge:
                 if chosen:
                     self.caption_label.set(chosen.name)
                     if hasattr(self,"caption_hint"):
-                        self.caption_hint.configure(text=f"{chosen.name} — {chosen.sub}.")
+                        self.caption_hint.configure(text=f"{chosen.name} â€” {chosen.sub}.")
                 self.log("Subtitle mode selected: "+(chosen.name if chosen else style))
                 dialog.destroy()
             tk.Button(frame,image=photo,command=select,borderwidth=0,
@@ -328,7 +364,7 @@ class ClipForge:
 
     def refresh_key_status(self):
         self.key_status.configure(text="Gemini key configured" if has_key()
-                                  else "Gemini key missing — click Set Gemini Key",
+                                  else "Gemini key missing â€” click Set Gemini Key",
                                   fg=C["green"] if has_key() else C["muted"])
     def switch_source(self,_=None):
         mode=self.source_type.get()
@@ -463,23 +499,49 @@ class ClipForge:
             messagebox.showerror("Invalid output quality","Select 720p or 1080p.")
             return
         ai=self.mode.get().startswith("Gemini")
+        visual=self.visual.get()
+        use_vision=self.video_vision.get()
+        standalone=self.standalone_output.get()
+        smart_compilation=self.smart_compilation_output.get()
+        narrative_reconstruction=self.narrative_output.get()
+        try:
+            story_seconds=int(self.story_seconds.get())
+        except (ValueError,tk.TclError):
+            messagebox.showerror("Invalid duration","Story Composer duration must be a number from 12 to 180 seconds.")
+            return
+        if not (standalone or smart_compilation or narrative_reconstruction):
+            messagebox.showwarning("Choose an output","Enable at least one output mode.")
+            return
+        if not 12 <= story_seconds <= 180:
+            messagebox.showerror("Invalid duration","Story Composer duration must be between 12 and 180 seconds.")
+            return
+        if (smart_compilation or narrative_reconstruction) and not ai:
+            messagebox.showwarning("Gemini required","Story Composer needs Gemini AI editorial analysis. Standalone Highlights can still use offline audio mode.")
+            return
         if ai and not has_key():
             messagebox.showwarning("API key needed","Click Set Gemini Key first.")
             return
-        if ai and not messagebox.askyesno(
-            "Send video excerpts to Google Gemini?",
+        if use_vision and (not ai or not visual):
+            messagebox.showwarning(
+                "Visual analysis required",
+                "Video Vision MCP needs Gemini AI and AI visual analysis enabled. It does not run in offline audio mode."
+            )
+            return
+        consent=(
             "This sends compressed audio and (if enabled) sparse timestamped frames to Google AI for story and visual editorial scoring.\n"
             "Visual analysis describes generic content (animation, objects, diagrams, etc.); it does not identify people.\n"
-            "Context-aware duration uses local Whisper on this PC; the transcript is not uploaded.\n"
-            "Up to 6 sections; failed calls may retry. API quota/cost may apply.\n"
-            "Continue?"):
+            + ("Video Vision MCP adds up to 8 extra local frames; that MCP step sends no transcript or video to a cloud service.\n" if use_vision else "")
+            + "Context-aware duration uses local Whisper on this PC; the transcript is not uploaded.\n"
+            + "Up to 6 sections; failed calls may retry. API quota/cost may apply.\n"
+            + "Continue?"
+        )
+        if ai and not messagebox.askyesno("Send video excerpts to Google Gemini?",consent):
             return
         dest_base=Path(self.dest.get().strip()).expanduser().resolve()
         style=self.layout.get()
         model=self.model.get().strip()
         captions=self.caption.get()
         burn=self.burn.get()
-        visual=self.visual.get()
         context_aware=self.context_duration.get()
         subject_mode=self.subject_mode.get()
         auto=self.autoframe.get()
@@ -505,27 +567,169 @@ class ClipForge:
                     folder_name=current.stem
                 dest=dest_base/folder_name
                 self.messages.put(("set_export",str(dest)))
+                vision_result=None
                 if ai:
+                    vision_frames=None
+                    if use_vision:
+                        self.messages.put(("log","Video Vision MCP: extracting a bounded set of local frames..."))
+                        try:
+                            from video_vision_adapter import VideoVisionMCPProvider
+                            from vision_cache import CachedVisionProvider
+                            from vision_quality import filter_vision_frames
+                            from clip_engine import probe_duration
+                            vision_provider=CachedVisionProvider(VideoVisionMCPProvider())
+                            vision_result=vision_provider.analyze(
+                                current,duration_seconds=float(probe_duration(current)),
+                                max_frames=8,
+                            )
+                            quality=filter_vision_frames(
+                                vision_result.frames,
+                                duration_seconds=float(probe_duration(current)),
+                                max_frames=8,
+                            )
+                            vision_frames=quality.frames
+                            self.messages.put(("log",f"Video Vision MCP supplied {len(vision_frames)} additional frames (cache: {vision_result.metadata.get('cache','miss')})."))
+                            for quality_warning in quality.warnings:
+                                self.messages.put(("log","Vision quality: "+quality_warning))
+                            for warning in vision_result.warnings:
+                                self.messages.put(("log","Vision note: "+warning))
+                        except Exception as vision_exc:
+                            self.messages.put(("log",f"Video Vision MCP unavailable; using built-in frame sampling instead. {type(vision_exc).__name__}: {str(vision_exc)[:160]}"))
                     selection=process_ai(current,dest,count,seconds,style,model,
                         log=lambda x:self.messages.put(("log",x)),
                         visual=visual,render=False,
-                        context_aware=context_aware,duration_model="base")
+                        context_aware=context_aware,duration_model="base",
+                        vision_frames=vision_frames)
                 else:
                     if context_aware:
                         self.messages.put(("log","Context-aware sentence alignment requires Gemini AI; offline audio mode keeps the requested fixed duration."))
                     selection=process_local(current,dest,count,seconds,style,
                         log=lambda x:self.messages.put(("log",x)),dry_run=True)
-                self.messages.put(("log","Selecting scene-aware crops and styling captions..."))
-                outcome=export_v04(current,dest,selection["clips"],
-                    auto=auto,scenes=scene,captions=captions,
-                    burn=burn,style=cap_style,layout=style,
-                    subject_mode=subject_mode,resolution=resolution,
-                    log=lambda x:self.messages.put(("log",x)))
-                completed=sum(bool(x.get("ok")) for x in outcome["clips"])
-                if not completed:
-                    raise RuntimeError("No clips exported. Check activity log.")
-                self.messages.put(("done",
-                    f"{resolution} export complete: {completed}/{len(outcome['clips'])} clips\n{dest}"))
+
+                successes=[]
+                failures=[]
+                suggestion_items=[]
+                if standalone:
+                    self.messages.put(("log","Rendering Standalone Highlights..."))
+                    outcome=export_v04(current,dest,selection["clips"],
+                        auto=auto,scenes=scene,captions=captions,
+                        burn=burn,style=cap_style,layout=style,
+                        subject_mode=subject_mode,resolution=resolution,
+                        log=lambda x:self.messages.put(("log",x)))
+                    completed=sum(bool(x.get("ok")) for x in outcome["clips"])
+                    suggestion_items.extend({
+                        "output": item.get("output"),
+                        "start": item.get("start", 0),
+                        "duration": item.get("duration", 0),
+                        "title": item.get("title", "Standalone Highlight"),
+                        "reason": item.get("reason", ""),
+                        "summary": item.get("payoff", ""),
+                    } for item in outcome["clips"] if item.get("ok"))
+                    if completed:
+                        successes.append(f"Standalone Highlights: {completed}/{len(outcome['clips'])} clips")
+                    else:
+                        failures.append("Standalone Highlights: no clips rendered.")
+                if smart_compilation or narrative_reconstruction:
+                    self.messages.put(("log","Building the unified analysis bundle for Story Composer..."))
+                    from dataclasses import replace
+                    from unified_analyzer import probe_source, build_analysis_bundle
+                    from smart_reframe import shot_boundaries
+                    from gemini_highlights import request_story_compositions
+                    from clipforge_contracts import (
+                        CaptionPlan, CompositionStrategy, RenderSettings,
+                    )
+                    from story_composer import build_composition
+                    from composition_renderer import render_composition
+
+                    media=probe_source(current)
+                    cuts=shot_boundaries(current) if scene else []
+                    bundle=build_analysis_bundle(
+                        media,
+                        transcript_rows=selection.get("transcript_spans",[]),
+                        scene_cuts=cuts,
+                        editorial_rows=selection.get("ranked_candidates",[]),
+                    )
+                    if vision_result is not None:
+                        try:
+                            from multimodal_fusion import fuse_visual_evidence
+                            bundle=fuse_visual_evidence(bundle,vision_result,max_frames=8)
+                        except Exception as fusion_exc:
+                            self.messages.put(("log",f"Visual evidence fusion skipped: {str(fusion_exc)[:160]}"))
+                    try:
+                        story=request_story_compositions(bundle.events)
+                        bundle=replace(
+                            bundle,
+                            composition_orders=story["composition_orders"],
+                            event_roles=story["event_roles"],
+                            event_dependencies=story["event_dependencies"],
+                        )
+                        self.messages.put(("log","Gemini supplied separate Smart Compilation and Narrative Reconstruction story maps."))
+                    except Exception as story_exc:
+                        self.messages.put(("log",f"Story map unavailable; deterministic editorial ordering will be used. {type(story_exc).__name__}: {str(story_exc)[:150]}"))
+
+                    strategies=[]
+                    if smart_compilation:
+                        strategies.append(CompositionStrategy.SMART_COMPILATION)
+                    if narrative_reconstruction:
+                        strategies.append(CompositionStrategy.NARRATIVE_RECONSTRUCTION)
+                    width=1080 if resolution=="1080p" else 720
+                    height=1920 if resolution=="1080p" else 1280
+                    for strategy in strategies:
+                        try:
+                            edl=build_composition(
+                                bundle,strategy,
+                                target_duration_seconds=story_seconds,
+                            )
+                            edl=replace(
+                                edl,
+                                captions=CaptionPlan(
+                                    enabled=captions,preset_id=cap_style,
+                                    burn_in=burn,export_srt=True,
+                                ),
+                                render=RenderSettings(width=width,height=height,fps=30),
+                            )
+                            output_path=dest/f"{current.stem}_{strategy.value}.mp4"
+                            rendered=render_composition(
+                                bundle,edl,output_path,
+                                layout=style,auto_reframe=auto,
+                                scene_detection=scene,subject_mode=subject_mode,
+                                resolution=resolution,
+                                log=lambda x:self.messages.put(("log",x)),
+                            )
+                            successes.append(f"{edl.title}: {rendered['duration_seconds']:.1f}s")
+                            for segment in edl.segments:
+                                event=next((event for event in bundle.events if event.event_id in segment.event_ids),None)
+                                suggestion_items.append({
+                                    "output": str(rendered["output"]),
+                                    "start": segment.source_in,
+                                    "duration": segment.duration_seconds,
+                                    "title": event.topic if event else edl.title,
+                                    "reason": segment.reason,
+                                    "summary": event.summary if event else "",
+                                })
+                        except Exception as composition_exc:
+                            failures.append(f"{strategy.value}: {type(composition_exc).__name__}: {str(composition_exc)[:220]}")
+                            self.messages.put(("log",f"{strategy.value} failed: {str(composition_exc)[:220]}"))
+                if not successes:
+                    raise RuntimeError("No requested output completed. " + " | ".join(failures))
+                try:
+                    from title_hashtag_suggestions import write_suggestion_markdown
+                    suggestion_file=write_suggestion_markdown(
+                        dest,
+                        suggestion_items,
+                        selection.get("transcript_spans",[]),
+                        allow_ai=ai,
+                    )
+                    if suggestion_file:
+                        self.messages.put(("log",f"Title and hashtag suggestions saved: {suggestion_file.name}"))
+                        successes.append("Title & Hashtag Suggestions: " + suggestion_file.name)
+                except Exception as suggestion_exc:
+                    failures.append("Title & Hashtag Suggestions: " + str(suggestion_exc)[:180])
+                    self.messages.put(("log","Title/hashtag suggestions could not be generated: "+str(suggestion_exc)[:180]))
+                summary=os.linesep.join(successes)+f"{os.linesep}{os.linesep}Output folder: {dest}"
+                if failures:
+                    summary+=os.linesep*2+"Some outputs could not be created:"+os.linesep+os.linesep.join(failures)
+                self.messages.put(("done",summary))
             except Exception as exc:
                 self.messages.put(("error",str(exc)[:900]))
         threading.Thread(target=work,daemon=True).start()
@@ -572,6 +776,29 @@ class ClipForge:
 
     def open_review(self):
         folder=self.last_export if self.last_export and self.last_export.exists() else Path(self.dest.get())/"videoplayback"
+        compositions=sorted(
+            folder.glob("*.edl.json"),
+            key=lambda item:item.stat().st_mtime,
+            reverse=True,
+        ) if folder.exists() else []
+        if compositions:
+            chosen=compositions[0]
+            if len(compositions)>1:
+                selected=filedialog.askopenfilename(
+                    title="Choose a composition to review",
+                    initialdir=str(folder),
+                    filetypes=[("ClipForge composition EDL","*.edl.json")],
+                )
+                if not selected:
+                    return
+                chosen=Path(selected)
+            args=[sys.executable,str(ROOT/"composition_review.py"),"--edl",str(chosen)]
+            try:
+                silent_popen(args,cwd=str(ROOT))
+                self.log("Multi-segment Composition Review Studio opened.")
+            except OSError as exc:
+                messagebox.showerror("Composition Review launch failed",str(exc))
+            return
         candidate=None
         manifest=folder/"v04-manifest.json"
         if manifest.exists():
