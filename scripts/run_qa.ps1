@@ -7,7 +7,7 @@ try {
 from pathlib import Path
 import py_compile
 root = Path(".")
-files = list(root.glob("*.py"))
+files = list((root / "clipforge").glob("*.py")) + [root / "main.py"]
 files += list((root / "tests").glob("qa_v12_*.py"))
 files += list((root / "tests").glob("qa_v11_*.py"))
 for path in files:
@@ -29,6 +29,7 @@ print(f"PY_COMPILE_OK: {len(files)} modules")
         "tests.qa_v12_title_hashtags",
         "tests.qa_v12_branding_packaging",
         "tests.qa_v12_vanitas_controls",
+        "tests.qa_v12_vanitas_controls_runtime",
         "tests.qa_v11_ui",
         "tests.qa_v11_gui_smoke"
     )

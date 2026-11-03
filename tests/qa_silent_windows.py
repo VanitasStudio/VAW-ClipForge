@@ -6,9 +6,9 @@ import time
 from ctypes import wintypes
 from pathlib import Path
 
-from silent_process import run,popen,verify_hidden_flags
-from clip_engine import FFMPEG,probe_duration
-from secure_config import has_key,load_key
+from clipforge.silent_process import run,popen,verify_hidden_flags
+from clipforge.clip_engine import FFMPEG,probe_duration
+from clipforge.secure_config import has_key,load_key
 
 print("HIDDEN_FLAGS",verify_hidden_flags(),flush=True)
 powershell=run(

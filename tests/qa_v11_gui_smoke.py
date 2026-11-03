@@ -1,4 +1,4 @@
-from clipforge_gui import ClipForge
+from clipforge.clipforge_gui import ClipForge
 app=ClipForge()
 app.root.withdraw()
 app.root.update_idletasks()
@@ -15,4 +15,4 @@ print("TKINTER_UI_BUILD_PASS")
 print("CAPTION_COMBOBOX_BINDING_PASS")
 print("ALL_CAPITAL_SELECTION_PASS")
 print("PRIMARY_ACTION_AND_KEY_STATUS_PASS")
-app.root.destroy()
+app.close()

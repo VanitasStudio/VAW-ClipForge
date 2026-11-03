@@ -5,13 +5,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from clipforge_contracts import (
+from clipforge.clipforge_contracts import (
     AnalysisBundle, EditorialEvent, MediaSource, SceneSpan, SegmentRole,
 )
-from multimodal_fusion import fuse_visual_evidence
-from vision_cache import CachedVisionProvider
-from vision_provider import VisionFrame, VisionResult
-from vision_quality import filter_vision_frames
+from clipforge.multimodal_fusion import fuse_visual_evidence
+from clipforge.vision_cache import CachedVisionProvider
+from clipforge.vision_provider import VisionFrame, VisionResult
+from clipforge.vision_quality import filter_vision_frames
 
 
 class FakeVisionProvider:

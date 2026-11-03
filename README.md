@@ -1,4 +1,4 @@
-# VAW ClipForge v1.2 — Vision-Aware Story Editing
+# VAW ClipForge v1.2.1 — Vision-Aware Story Editing
 
 VAW ClipForge v1.2 builds on the v1.1 local-first desktop editor. It keeps Standalone Highlights and adds two complete Story Composer outputs: Smart Compilation and Narrative Reconstruction. Both story strategies can be enabled together.
 
@@ -92,7 +92,7 @@ Every export run creates one **Title and Hashtag Suggestion.md** file in the exp
 
 ## Repository layout
 
-Runtime modules and Windows launchers remain at the project root for compatibility. QA tests are grouped in tests/, product and release documentation in docs/, setup and maintainer scripts in scripts/, and historical one-off patches in tools/legacy_patches/.
+Application source lives in the clipforge/ Python package. The repository root contains only project metadata, documentation, and the thin main.py entry point. QA tests are grouped in tests/, product documentation in docs/, build and maintainer scripts in scripts/, and diagnostics or historical migration utilities in tools/.
 
 Run the supported regression suite:
 
@@ -100,7 +100,7 @@ Run the supported regression suite:
 powershell -ExecutionPolicy Bypass -File .\scripts\run_qa.ps1
 ~~~
 
-See docs/REPOSITORY_STRUCTURE.md for the full layout.
+See docs/REPOSITORY_STRUCTURE.md for the full layout and RELEASE_NOTES.md for the latest changes. Historical release notes are archived under docs/archive/releases/.
 
 ## Privacy and safety
 

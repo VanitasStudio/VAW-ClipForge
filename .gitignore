@@ -52,6 +52,16 @@ Desktop.ini
 
 tests/samples/
 
+# Test and generated reports
+.coverage
+coverage.xml
+htmlcov/
+artifacts/
+logs/
+*.egg-info/
+
 # Windows packaging outputs
 build/
 dist/
+
+*.spec

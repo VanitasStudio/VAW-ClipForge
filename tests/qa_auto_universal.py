@@ -1,5 +1,5 @@
 from pathlib import Path
-from smart_reframe import frame_centers, smart_render
+from clipforge.smart_reframe import frame_centers, smart_render
 root=Path(__file__).resolve().parents[1]
 src=root/"samples"/"animated-object-qa.mp4"
 for mode in ("universal","people","motion","center"):

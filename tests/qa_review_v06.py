@@ -1,7 +1,7 @@
 from pathlib import Path
-from review_core import load_clip,make_ass,validate,export_review
-from subject_tracking import track_subject
-from subtitle_presets import PRESETS,preview_image
+from clipforge.review_core import load_clip,make_ass,validate,export_review
+from clipforge.subject_tracking import track_subject
+from clipforge.subtitle_presets import PRESETS,preview_image
 p=Path("exports/videoplayback/videoplayback_v04_01_00243s_rev3.mp4")
 d=load_clip(p)
 print("CUTS",d["cuts"],flush=True)

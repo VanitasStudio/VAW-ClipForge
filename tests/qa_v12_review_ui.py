@@ -7,13 +7,13 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 
-from clipforge_contracts import (
+from clipforge.clipforge_contracts import (
     AnalysisBundle, EditorialEvent, SegmentRole, TranscriptSpan,
     CompositionStrategy, dumps_contract,
 )
-from composition_review import CompositionReview
-from story_composer import build_composition
-from unified_analyzer import probe_source
+from clipforge.composition_review import CompositionReview
+from clipforge.story_composer import build_composition
+from clipforge.unified_analyzer import probe_source
 
 
 ROOT = Path(__file__).resolve().parents[1]

@@ -1,7 +1,7 @@
 from pathlib import Path
 import subprocess
-from clip_engine import FFMPEG
-from smart_reframe import export_v04
+from clipforge.clip_engine import FFMPEG
+from clipforge.smart_reframe import export_v04
 root=Path(__file__).resolve().parents[1]
 dest=root/"samples"/"fullhd-caption-qa"
 result=export_v04(root/"samples"/"spoken-test.mp4",dest,

@@ -2,8 +2,8 @@ from pathlib import Path
 import ast
 import re
 
-from subtitle_presets import PRESETS, choose, caption_ass, preview_image
-from stylish_captions import format_caption_text
+from clipforge.subtitle_presets import PRESETS, choose, caption_ass, preview_image
+from clipforge.stylish_captions import format_caption_text
 
 ids=[p.id for p in PRESETS]
 names=[p.name for p in PRESETS]
@@ -31,7 +31,7 @@ assert format_caption_text("This is the result","all_caps")=="THIS IS THE RESULT
 assert format_caption_text("This is the result","karaoke")=="This is the result"
 
 # Exercise the real caption-file writer with a mocked local Whisper response.
-import stylish_captions
+import clipforge.stylish_captions as stylish_captions
 from types import SimpleNamespace
 class MockWhisper:
     def transcribe(self,*args,**kwargs):
@@ -62,7 +62,7 @@ finally:
 preview=preview_image("all_caps",240,150,selected=True)
 assert preview.size==(240,150)
 
-source=(Path(__file__).resolve().parents[1] / "clipforge_gui.py").read_text(encoding="utf-8")
+source=(Path(__file__).resolve().parents[1] / "clipforge/clipforge_gui.py").read_text(encoding="utf-8")
 ast.parse(source)
 assert "def create_ui(self):" in source
 assert "def set_caption_from_label(self,_=None):" in source

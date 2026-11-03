@@ -1,7 +1,7 @@
 from pathlib import Path
 import subprocess
-from review_core import load_clip,export_review
-from clip_engine import FFMPEG
+from clipforge.review_core import load_clip,export_review
+from clipforge.clip_engine import FFMPEG
 root=Path(__file__).resolve().parents[1]
 source=root/"exports"/"videoplayback"/"videoplayback_v04_01_00243s_rev3.mp4"
 d=load_clip(source)

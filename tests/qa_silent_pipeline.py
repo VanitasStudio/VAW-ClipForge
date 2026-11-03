@@ -1,10 +1,10 @@
 """Production smoke: offline engine+subtitle, no visible console windows."""
 from pathlib import Path
-from clip_engine import probe_duration,process
-from silent_process import verify_hidden_flags
-from secure_config import has_key,load_key
-from smart_reframe import export_v04
-from url_source import _ensure_ffmpeg
+from clipforge.clip_engine import probe_duration,process
+from clipforge.silent_process import verify_hidden_flags
+from clipforge.secure_config import has_key,load_key
+from clipforge.smart_reframe import export_v04
+from clipforge.url_source import _ensure_ffmpeg
 import yt_dlp.utils
 import os,subprocess,sys
 

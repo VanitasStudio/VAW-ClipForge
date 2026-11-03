@@ -12,7 +12,7 @@ from unittest.mock import patch
 import cv2
 import numpy as np
 
-import video_vision_adapter as adapter
+import clipforge.video_vision_adapter as adapter
 
 
 class VideoVisionAdapterTests(unittest.TestCase):

@@ -1,4 +1,4 @@
-from url_source import check_link
+from clipforge.url_source import check_link
 for url in ("https://vimeo.com/76979871",
             "https://www.youtube.com/watch?v=jNQXAC9IVRw"):
     site=url.split("/")[2]

@@ -1,44 +1,30 @@
-# Repository Structure
+# Repository structure
 
-ClipForge keeps its Windows entry points and runtime modules at the project root so the existing desktop launchers and local imports remain compatible. Supporting material is grouped by purpose.
+    VAW-ClipForge/
+    ??? clipforge/              Application package and runtime modules
+    ??? assets/                 Brand assets, fonts, icons and bundled resources
+    ??? docs/                   Product, architecture and release documentation
+    ?   ??? archive/releases/   Historical release notes
+    ??? scripts/                Build, QA and setup automation
+    ??? tests/                  Automated tests and QA fixtures
+    ??? tools/
+    ?   ??? diagnostics/        Maintainer diagnostics
+    ?   ??? legacy_patches/     Historical one-off migration scripts (not runtime)
+    ??? .github/                GitHub workflows and templates
+    ??? main.py                 Thin application entry point
+    ??? START_CLIPFORGE.cmd     Windows launcher for packaged executable
+    ??? START_REVIEW_STUDIO.cmd Windows Review Studio launcher
 
-~~~text
-VAW-ClipForge/
-├── clipforge_gui.py
-├── START_CLIPFORGE.cmd
-├── START_REVIEW_STUDIO.cmd
-├── runtime modules (*.py)
-├── tests/
-│   ├── qa_v12_*.py
-│   └── qa_v11_*.py
-├── docs/
-├── scripts/
-├── tools/legacy_patches/
-├── samples/       # Local-only media fixtures
-├── exports/       # Generated media
-├── models/        # Downloaded models
-├── url-cache/     # Download cache
-├── backups/       # Local recovery copies
-├── README.md
-└── .gitignore
-~~~
+## Import policy
 
-## Development
+Runtime modules are imported through the clipforge package (for example,
+from clipforge.clip_engine import probe_duration). Tests use the same public
+package path. New runtime modules belong in clipforge/; do not add application
+modules to the repository root.
 
-Run the supported automated regression suite from the repository root:
+## Build policy
 
-~~~powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\run_qa.ps1
-~~~
-
-The suite compiles the Python modules and runs the deterministic v1.2 contract, analyzer, composer, vision, rendering, Review Studio, title/hashtag and v1.1 regression tests.
-
-Some historical QA scripts require local sample media, a configured Gemini key, network access or a visible desktop session. They remain available in tests/ but are not part of the default regression command.
-
-## Historical patch scripts
-
-tools/legacy_patches/ contains one-off scripts used during earlier version migrations. They are retained for audit/history only. Do not run them against the current application unless a specific recovery procedure calls for it.
-
-## Runtime compatibility
-
-The runtime modules intentionally remain at the root for this cleanup pass. Moving them into a Python package would require a separate import/launcher migration and is not necessary to make the repository navigable.
+scripts/build_windows.ps1 packages main.py with PyInstaller. Static package
+imports are preferred; explicit hidden imports use fully-qualified clipforge.*
+names. Bundled assets remain at the repository/bundle root and are resolved
+independently of the Python package location.

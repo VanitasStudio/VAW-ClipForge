@@ -1,7 +1,7 @@
 from pathlib import Path
 import tempfile
-from editorial_intelligence import enrich_candidate, write_editorial_report
-from gemini_highlights import select_best, rank_candidates
+from clipforge.editorial_intelligence import enrich_candidate, write_editorial_report
+from clipforge.gemini_highlights import select_best, rank_candidates
 
 def candidate(start,end,title,base,metrics,visual="animation"):
     return {

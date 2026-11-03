@@ -2,7 +2,7 @@
 from pathlib import Path
 import cv2
 import numpy as np
-from subject_tracking import track_subject
+from clipforge.subject_tracking import track_subject
 root=Path(__file__).resolve().parents[1]
 out=root/"samples"/"animated-object-qa.mp4"
 out.parent.mkdir(exist_ok=True)

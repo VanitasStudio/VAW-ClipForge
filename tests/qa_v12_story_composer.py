@@ -5,11 +5,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from clipforge_contracts import (
+from clipforge.clipforge_contracts import (
     AnalysisBundle, EditorialEvent, MediaSource, SegmentRole,
     CompositionStrategy, validate_edl,
 )
-from story_composer import build_composition, build_compositions
+from clipforge.story_composer import build_composition, build_compositions
 
 
 class StoryComposerTests(unittest.TestCase):
