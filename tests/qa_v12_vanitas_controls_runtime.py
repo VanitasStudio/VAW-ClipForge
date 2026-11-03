@@ -50,6 +50,21 @@ class VanitasControlsRuntimeTests(unittest.TestCase):
         self.assertEqual(value.get(), "Video URL")
         self.assertIsNone(combo._popup)
 
+    def test_combo_dismisses_when_clicking_outside(self):
+        combo = VanitasCombo(self.root, values=["A", "B"], state="readonly")
+        combo.pack()
+        outside = tk.Button(self.root, text="Outside")
+        outside.pack()
+        self.root.update()
+        combo._open()
+        self.root.update()
+        self.assertIsNotNone(combo._popup)
+        self.assertFalse(bool(combo._popup.grab_current()))
+        outside.event_generate("<Button-1>")
+        self.root.update()
+        self.assertIsNone(combo._popup)
+        self.assertIsNone(combo._listbox)
+
     def test_combo_keyboard_open_and_selection_event(self):
         value = tk.StringVar(value="A")
         combo = VanitasCombo(self.root, textvariable=value, values=["A", "B"])
@@ -131,6 +146,17 @@ class VanitasControlsRuntimeTests(unittest.TestCase):
         self.assertEqual(button.cget("text"), "Working")
         button.invoke()
         self.assertEqual(calls, ["run"])
+
+    def test_rounded_surfaces_use_smooth_canvas_primitives(self):
+        from vanitas_widgets import _rounded_rect
+        canvas = tk.Canvas(self.root, width=120, height=40)
+        canvas.pack()
+        _rounded_rect(canvas, 1, 1, 119, 39, 9, fill="#075BFF", outline="#20BFFF")
+        self.root.update()
+        kinds = [canvas.type(item) for item in canvas.find_all()]
+        self.assertIn("oval", kinds)
+        self.assertIn("arc", kinds)
+        self.assertNotIn("polygon", kinds)
 
     def test_all_controls_are_tk_native_custom_classes(self):
         self.assertTrue(issubclass(VanitasEntry, tk.Entry))

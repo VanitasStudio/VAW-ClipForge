@@ -27,6 +27,31 @@ PALETTE = {
 }
 
 
+def _rounded_rect(canvas, x1, y1, x2, y2, radius, *, fill, outline="", width=1):
+    """Draw a clean rounded rectangle from overlapping Canvas primitives."""
+    radius = max(1, min(int(radius), int((x2-x1)/2), int((y2-y1)/2)))
+    # Fill body and corner circles; this avoids jagged smoothed polygons.
+    canvas.create_rectangle(x1+radius, y1, x2-radius, y2, fill=fill, outline="")
+    canvas.create_rectangle(x1, y1+radius, x2, y2-radius, fill=fill, outline="")
+    for cx, cy in ((x1+radius, y1+radius), (x2-radius, y1+radius),
+                    (x1+radius, y2-radius), (x2-radius, y2-radius)):
+        canvas.create_oval(cx-radius, cy-radius, cx+radius, cy+radius,
+                           fill=fill, outline="")
+    if outline:
+        canvas.create_arc(x1, y1, x1+2*radius, y1+2*radius, start=90, extent=90,
+                          style="arc", outline=outline, width=width)
+        canvas.create_arc(x2-2*radius, y1, x2, y1+2*radius, start=0, extent=90,
+                          style="arc", outline=outline, width=width)
+        canvas.create_arc(x2-2*radius, y2-2*radius, x2, y2, start=270, extent=90,
+                          style="arc", outline=outline, width=width)
+        canvas.create_arc(x1, y2-2*radius, x1+2*radius, y2, start=180, extent=90,
+                          style="arc", outline=outline, width=width)
+        canvas.create_line(x1+radius, y1, x2-radius, y1, fill=outline, width=width)
+        canvas.create_line(x1+radius, y2, x2-radius, y2, fill=outline, width=width)
+        canvas.create_line(x1, y1+radius, x1, y2-radius, fill=outline, width=width)
+        canvas.create_line(x2, y1+radius, x2, y2-radius, fill=outline, width=width)
+
+
 def load_brand_fonts():
     """Register bundled Archivo and Quantico privately for this process."""
     if os.name != "nt":
@@ -56,6 +81,8 @@ class VanitasCombo(tk.Frame):
         self.font = font
         self._popup = None
         self._listbox = None
+        self._outside_tag = f"VanitasComboOutside{id(self)}"
+        self._outside_tagged = []
         self._entry = tk.Entry(
             self, textvariable=self.variable, relief="flat", bd=0,
             bg=PALETTE["field"], fg=PALETTE["text"],
@@ -191,15 +218,49 @@ class VanitasCombo(tk.Frame):
         listing.bind("<KP_Enter>", self._choose)
         listing.bind("<Escape>", self._escape)
         popup.bind("<Escape>", self._escape)
-        # A local grab keeps focus inside the popup until a choice is made.
-        try:
-            popup.grab_set()
-        except tk.TclError:
-            pass
+        # Do not grab input: users must be able to click elsewhere to dismiss.
         popup.lift()
-        listing.focus_force()
+        listing.focus_set()
+        self.after_idle(self._bind_outside_dismiss)
         self.configure(highlightbackground=PALETTE["blue"])
         self._draw_arrow(True)
+
+    def _bind_outside_dismiss(self):
+        if not self._popup or not self._popup.winfo_exists():
+            return
+        if not self._outside_tagged:
+            self.bind_class(
+                self._outside_tag, "<Button-1>", self._dismiss_on_outside_click, add="+"
+            )
+            root = self.winfo_toplevel()
+            stack = [root, self._popup]
+            while stack:
+                widget = stack.pop()
+                try:
+                    tags = widget.bindtags()
+                    if self._outside_tag not in tags:
+                        widget.bindtags(tags + (self._outside_tag,))
+                        self._outside_tagged.append(widget)
+                    stack.extend(widget.winfo_children())
+                except tk.TclError:
+                    continue
+
+    def _dismiss_on_outside_click(self, event=None):
+        popup = self._popup
+        if popup is None or not popup.winfo_exists() or event is None:
+            return None
+        widget = event.widget
+        try:
+            widget_path = str(widget)
+            combo_path = str(self)
+            popup_path = str(popup)
+            inside_combo = widget_path == combo_path or widget_path.startswith(combo_path + ".")
+            inside_popup = widget_path == popup_path or widget_path.startswith(popup_path + ".")
+        except (tk.TclError, AttributeError):
+            inside_combo = inside_popup = False
+        if not inside_combo and not inside_popup:
+            self._close()
+        return None
 
     def _choose_after_click(self, event=None):
         # Select explicitly: returning "break" suppresses Listbox class selection.
@@ -231,9 +292,20 @@ class VanitasCombo(tk.Frame):
     def _close(self):
         popup, self._popup = self._popup, None
         self._listbox = None
+        if self._outside_tagged:
+            try:
+                self.unbind_class(self._outside_tag, "<Button-1>")
+            except tk.TclError:
+                pass
+            for widget in self._outside_tagged:
+                try:
+                    widget.bindtags(tuple(tag for tag in widget.bindtags()
+                                          if tag != self._outside_tag))
+                except tk.TclError:
+                    pass
+            self._outside_tagged.clear()
         if popup:
             try:
-                popup.grab_release()
                 popup.destroy()
             except tk.TclError:
                 pass
@@ -349,7 +421,8 @@ class VanitasScrollbar(tk.Canvas):
         active = self._drag_offset is not None or self._hovering
         color = PALETTE["blue"] if active else "#52627A"
         outline = PALETTE["blue_hi"] if active else "#52627A"
-        self.create_polygon(points, fill=color, outline=outline, width=1, smooth=True)
+        _rounded_rect(self, left, top, right, bottom, radius,
+                      fill=color, outline=outline, width=1)
 
     def _on_enter(self, _event=None):
         self._hovering = True
@@ -437,10 +510,8 @@ class VanitasSlider(tk.Canvas):
         x = left + (right-left) * self._fraction()
         self.create_line(left, y, right, y, fill=self.track_color, width=5, capstyle="round")
         self.create_line(left, y, x, y, fill=self.active_color, width=5, capstyle="round")
-        self.create_polygon(x-7,y-6,x+7,y-6,x+9,y-4,x+9,y+4,
-                            x+7,y+6,x-7,y+6,x-9,y+4,x-9,y-4,
-                            fill=PALETTE["text"],outline=PALETTE["blue"],width=1,
-                            smooth=True)
+        _rounded_rect(self, x-8, y-7, x+8, y+7, 7,
+                      fill=PALETTE["text"], outline=PALETTE["blue"], width=1)
         if self.showvalue:
             self.create_text(self.winfo_width()-5,y,text=f"{self.variable.get()}",
                              fill=PALETTE["muted"],font=("Archivo",8),anchor="e")
@@ -681,10 +752,8 @@ class VanitasButton(tk.Canvas):
             fill, fg = self._base, self._fg
         border = PALETTE["blue_hi"] if self.primary and self._hovering else PALETTE["line"]
         radius = 9
-        points = [radius, 1, width-radius, 1, width-1, radius,
-                  width-1, height-radius, width-radius, height-1,
-                  radius, height-1, 1, height-radius, 1, radius]
-        self.create_polygon(points, fill=fill, outline=border, width=1, smooth=True)
+        _rounded_rect(self, 1, 1, width-1, height-1, radius,
+                      fill=fill, outline=border, width=1)
 
         self.create_text(width / 2, height / 2, text=self.text,
                          fill=fg, font=self.font)

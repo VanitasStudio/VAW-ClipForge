@@ -32,4 +32,4 @@ widgets=(root/"vanitas_widgets.py").read_text(encoding="utf-8")
 for token in ("#05070B", "#101827", "#DCE6F5", "#075BFF", "#20BFFF"):
     assert token in widgets
 assert "#FF8746" not in widgets
-assert "VanitasScrollbar" in widgets and "smooth=True" in widgets
+assert "VanitasScrollbar" in widgets and "_rounded_rect(self, left, top, right, bottom" in widgets
