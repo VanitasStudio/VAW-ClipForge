@@ -1,7 +1,7 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from gemini_highlights import extract_audio, sampled_frames, request_gemini, probe_duration, MODEL
-from secure_config import load_key
+from clipforge.gemini_highlights import extract_audio, sampled_frames, request_gemini, probe_duration, MODEL
+from clipforge.secure_config import load_key
 source=Path(__file__).resolve().parents[1]/"samples"/"spoken-test.mp4"
 length=probe_duration(source)
 with TemporaryDirectory(prefix="vaw-gemini-qa-") as folder:

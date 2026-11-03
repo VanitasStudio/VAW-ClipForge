@@ -11,7 +11,7 @@ import urllib.request
 from datetime import datetime
 from pathlib import Path
 
-from secure_config import load_key
+from clipforge.secure_config import load_key
 
 MODEL = "gemini-3.6-flash"
 ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"

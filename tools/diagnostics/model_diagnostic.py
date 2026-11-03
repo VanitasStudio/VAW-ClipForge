@@ -3,7 +3,7 @@ Does not print the API key, response content, or full errors."""
 import json
 import urllib.request
 import urllib.error
-from secure_config import load_key
+from clipforge.secure_config import load_key
 ROOT="https://generativelanguage.googleapis.com/v1beta"
 KEY=load_key()
 req=urllib.request.Request(ROOT+"/models?pageSize=100",headers={"x-goog-api-key":KEY})

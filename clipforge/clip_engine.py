@@ -6,7 +6,7 @@ import argparse
 import json
 import re
 import subprocess
-from silent_process import run as silent_run, popen as silent_popen
+from clipforge.silent_process import run as silent_run, popen as silent_popen
 from datetime import datetime
 from pathlib import Path
 import imageio_ffmpeg

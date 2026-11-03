@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from gemini_highlights import process_ai
+from clipforge.gemini_highlights import process_ai
 
 root=Path(__file__).resolve().parents[1]
 source=root/"samples"/"spoken-test.mp4"

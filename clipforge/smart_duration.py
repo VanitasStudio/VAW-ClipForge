@@ -89,7 +89,7 @@ def analyze_boundaries(source, cache_dir, model_size="base", log=print):
             pass
 
     _patch_av_compat()
-    from auto_captions import get_model
+    from clipforge.auto_captions import get_model
     model = get_model(model_size, log)
     log("Context analysis: transcribing source locally to find complete sentence boundaries...")
     segments, info = model.transcribe(

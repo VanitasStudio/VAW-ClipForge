@@ -9,17 +9,17 @@ import threading
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
-from vanitas_widgets import VanitasCombo, VanitasScrollbar, VanitasEntry, VanitasButton, VanitasSlider, load_brand_fonts
+from clipforge.vanitas_widgets import VanitasCombo, VanitasScrollbar, VanitasEntry, VanitasButton, VanitasSlider, load_brand_fonts
 
 import cv2
 from PIL import Image, ImageDraw, ImageFont, ImageTk
 
-from review_core import load_clip, focus_x, focus_center, crop_width, export_review, save_draft
-from subtitle_presets import PRESETS, choose, preview_image
+from clipforge.review_core import load_clip, focus_x, focus_center, crop_width, export_review, save_draft
+from clipforge.subtitle_presets import PRESETS, choose, preview_image
 from audio_preview import AudioPreview
-from subject_tracking import track_subject
+from clipforge.subject_tracking import track_subject
 
-ROOT=Path(__file__).resolve().parent
+ROOT=Path(__file__).resolve().parent.parent
 COLORS={"bg":"#05070B","panel":"#101827","surface":"#172235",
         "text":"#DCE6F5","sub":"#8E9DB4","red":"#075BFF",
         "blue":"#075BFF","yellow":"#20BFFF","line":"#29364B"}

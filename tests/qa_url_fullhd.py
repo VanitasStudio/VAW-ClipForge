@@ -1,8 +1,8 @@
 from pathlib import Path
 import subprocess
-from clip_engine import FFMPEG
-from smart_reframe import smart_render
-from url_source import validate_url,_ensure_ffmpeg,cache_stats,check_link
+from clipforge.clip_engine import FFMPEG
+from clipforge.smart_reframe import smart_render
+from clipforge.url_source import validate_url,_ensure_ffmpeg,cache_stats,check_link
 root=Path(__file__).resolve().parents[1]
 source=root/"samples"/"spoken-test.mp4"
 output=root/"samples"/"quality-1080-test.mp4"

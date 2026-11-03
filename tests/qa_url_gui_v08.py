@@ -5,8 +5,8 @@ from pathlib import Path
 import json
 import time
 from tkinter import messagebox
-from clipforge_gui import ClipForge
-from clip_engine import FFMPEG
+from clipforge.clipforge_gui import ClipForge
+from clipforge.clip_engine import FFMPEG
 import subprocess
 
 messagebox.askyesno=lambda *args,**kwargs:True

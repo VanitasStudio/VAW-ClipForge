@@ -3,9 +3,9 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from clipforge_contracts import AnalysisBundle, SceneSpan
-from vision_provider import VisionResult
-from vision_quality import filter_vision_frames
+from clipforge.clipforge_contracts import AnalysisBundle, SceneSpan
+from clipforge.vision_provider import VisionResult
+from clipforge.vision_quality import filter_vision_frames
 
 
 def fuse_visual_evidence(

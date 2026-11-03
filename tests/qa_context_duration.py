@@ -1,6 +1,6 @@
-from smart_duration import _build_sentences,align_interval
-from gemini_highlights import select_best,request_gemini,sample_windows
-from clip_engine import probe_duration
+from clipforge.smart_duration import _build_sentences,align_interval
+from clipforge.gemini_highlights import select_best,request_gemini,sample_windows
+from clipforge.clip_engine import probe_duration
 from pathlib import Path
 import json
 

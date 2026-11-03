@@ -13,12 +13,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable
 
-from clip_engine import EXTS, FFMPEG, probe_duration
-from clipforge_contracts import (
+from clipforge.clip_engine import EXTS, FFMPEG, probe_duration
+from clipforge.clipforge_contracts import (
     AnalysisBundle, EditorialEvent, MediaSource, SceneSpan, SegmentRole,
     TranscriptSpan,
 )
-from silent_process import run as silent_run
+from clipforge.silent_process import run as silent_run
 
 ANALYZER_VERSION = "1.2.0"
 
@@ -197,17 +197,17 @@ def analyze_source(
     vision_result = None
     if vision_enabled is None:
         try:
-            from video_vision_adapter import is_enabled
+            from clipforge.video_vision_adapter import is_enabled
             vision_enabled = is_enabled() or vision_provider is not None
         except Exception:
             vision_enabled = False
     if vision_enabled:
         try:
             if vision_provider is None:
-                from video_vision_adapter import VideoVisionMCPProvider
+                from clipforge.video_vision_adapter import VideoVisionMCPProvider
                 vision_provider = VideoVisionMCPProvider()
-            from vision_cache import CachedVisionProvider, default_vision_cache_dir
-            from vision_quality import filter_vision_frames
+            from clipforge.vision_cache import CachedVisionProvider, default_vision_cache_dir
+            from clipforge.vision_quality import filter_vision_frames
             vision_provider = CachedVisionProvider(vision_provider, default_vision_cache_dir())
             vision_result = vision_provider.analyze(
                 path, duration_seconds=media.duration_seconds, max_frames=8
@@ -236,7 +236,7 @@ def analyze_source(
 
     if context_aware:
         try:
-            from smart_duration import analyze_boundaries
+            from clipforge.smart_duration import analyze_boundaries
             transcript_rows = analyze_boundaries(
                 path, cache, model_size=duration_model, log=log
             )
@@ -246,14 +246,14 @@ def analyze_source(
 
     if include_scenes:
         try:
-            from smart_reframe import shot_boundaries
+            from clipforge.smart_reframe import shot_boundaries
             scene_cuts = shot_boundaries(path, log=log)
         except Exception as exc:
             warnings.append("Visual scene detection was unavailable.")
             log(f"Scene detection skipped: {type(exc).__name__}: {str(exc)[:160]}")
 
     try:
-        from gemini_highlights import process_ai
+        from clipforge.gemini_highlights import process_ai
         result = process_ai(
             path,
             cache / "gemini-analysis",
@@ -288,7 +288,7 @@ def analyze_source(
     )
     if vision_result is not None:
         try:
-            from multimodal_fusion import fuse_visual_evidence
+            from clipforge.multimodal_fusion import fuse_visual_evidence
             bundle = fuse_visual_evidence(bundle, vision_result)
         except Exception as exc:
             warnings.append("Visual evidence could not be attached to the analysis timeline.")
@@ -296,7 +296,7 @@ def analyze_source(
             log(f"Visual evidence fusion skipped: {type(exc).__name__}: {str(exc)[:160]}")
     if bundle.events:
         try:
-            from gemini_highlights import request_story_compositions
+            from clipforge.gemini_highlights import request_story_compositions
             story = request_story_compositions(bundle.events, provider=story_provider)
             bundle = replace(
                 bundle,

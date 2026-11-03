@@ -1,7 +1,7 @@
 from pathlib import Path
 from types import SimpleNamespace
 import time
-from review_editor import ReviewEditor
+from clipforge.review_editor import ReviewEditor
 clip=Path(__file__).resolve().parents[1]/"exports"/"videoplayback"/"videoplayback_v04_01_00243s_rev3.mp4"
 ed=ReviewEditor(clip)
 for _ in range(9):

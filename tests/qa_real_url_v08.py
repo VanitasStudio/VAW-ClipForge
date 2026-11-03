@@ -2,7 +2,7 @@
 Source listed by Wikimedia Commons: a 23-second Big Buck Bunny excerpt.
 No credentials, Gemini calls or publication.
 """
-from url_source import check_link,fetch_video,cache_stats
+from clipforge.url_source import check_link,fetch_video,cache_stats
 from pathlib import Path
 URL="https://www.youtube.com/watch?v=qzfWVYJNmAM"
 print("METADATA",check_link(URL),flush=True)

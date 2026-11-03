@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from title_hashtag_suggestions import (
+from clipforge.title_hashtag_suggestions import (
     OUTPUT_NAME,
     generate_suggestions,
     write_suggestion_markdown,

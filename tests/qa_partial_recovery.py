@@ -1,5 +1,5 @@
 from pathlib import Path
-import gemini_highlights as g
+import clipforge.gemini_highlights as g
 g.sample_windows=lambda total:[(0.0,9.0),(9.0,total-9.0)]
 calls=[0]
 def provider(audio,length,seconds,key,model,frames):

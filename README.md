@@ -92,7 +92,7 @@ Every export run creates one **Title and Hashtag Suggestion.md** file in the exp
 
 ## Repository layout
 
-Runtime modules and Windows launchers remain at the project root for compatibility. QA tests are grouped in tests/, product and release documentation in docs/, setup and maintainer scripts in scripts/, and historical one-off patches in tools/legacy_patches/.
+Application source lives in the clipforge/ Python package. The repository root contains only project metadata, documentation, and the thin main.py entry point. QA tests are grouped in tests/, product documentation in docs/, build and maintainer scripts in scripts/, and diagnostics or historical migration utilities in tools/.
 
 Run the supported regression suite:
 

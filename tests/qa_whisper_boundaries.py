@@ -1,6 +1,6 @@
 from pathlib import Path
-from smart_duration import analyze_boundaries,align_interval
-from gemini_highlights import select_best
+from clipforge.smart_duration import analyze_boundaries,align_interval
+from clipforge.gemini_highlights import select_best
 root=Path(__file__).resolve().parents[1]
 source=root/"samples"/"spoken-test.mp4"
 cache=root/"samples"/"context-duration-qa"

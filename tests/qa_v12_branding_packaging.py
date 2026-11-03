@@ -2,7 +2,7 @@ from pathlib import Path
 import ast
 
 root=Path(__file__).resolve().parents[1]
-gui=(root/"clipforge_gui.py").read_text(encoding="utf-8")
+gui=(root/"clipforge/clipforge_gui.py").read_text(encoding="utf-8")
 ast.parse(gui)
 assert '"#05070B"' in gui
 assert '"#075BFF"' in gui
@@ -28,7 +28,7 @@ print("CLEAN_UI_COPY_PASS")
 print("FROZEN_REVIEW_ROUTING_PASS")
 print("WINDOWS_ONEFILE_BUILD_CONFIG_PASS")
 
-widgets=(root/"vanitas_widgets.py").read_text(encoding="utf-8")
+widgets=(root/"clipforge/vanitas_widgets.py").read_text(encoding="utf-8")
 for token in ("#05070B", "#101827", "#DCE6F5", "#075BFF", "#20BFFF"):
     assert token in widgets
 assert "#FF8746" not in widgets

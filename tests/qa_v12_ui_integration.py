@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class V12UIIntegrationTests(unittest.TestCase):
     def test_all_three_outputs_default_enabled(self):
-        source = (ROOT / "clipforge_gui.py").read_text(encoding="utf-8-sig")
+        source = (ROOT / "clipforge/clipforge_gui.py").read_text(encoding="utf-8-sig")
         tree = ast.parse(source)
         assignments = [
             node for node in ast.walk(tree)
@@ -39,18 +39,18 @@ class V12UIIntegrationTests(unittest.TestCase):
         })
 
     def test_optional_vision_is_disabled_by_default(self):
-        source = (ROOT / "clipforge_gui.py").read_text(encoding="utf-8-sig")
+        source = (ROOT / "clipforge/clipforge_gui.py").read_text(encoding="utf-8-sig")
         self.assertIn("self.video_vision=tk.BooleanVar(value=False)", source)
         self.assertIn("Extra local frame sampling (Video Vision MCP)", source)
 
     def test_story_outputs_are_rendered_by_the_real_edl_renderer(self):
-        source = (ROOT / "clipforge_gui.py").read_text(encoding="utf-8-sig")
+        source = (ROOT / "clipforge/clipforge_gui.py").read_text(encoding="utf-8-sig")
         self.assertIn("build_composition(", source)
         self.assertIn("render_composition(", source)
         self.assertIn("request_story_compositions(", source)
 
     def test_review_studio_has_timeline_preview_captions_and_transitions(self):
-        source = (ROOT / "composition_review.py").read_text(encoding="utf-8-sig")
+        source = (ROOT / "clipforge/composition_review.py").read_text(encoding="utf-8-sig")
         for required in (
             "def _draw_timeline", "def _update_preview", "def _apply_caption",
             "def _apply_transition_value", "def _render",
@@ -58,9 +58,9 @@ class V12UIIntegrationTests(unittest.TestCase):
             self.assertIn(required, source)
 
     def test_main_review_action_prefers_composition_edl(self):
-        source = (ROOT / "clipforge_gui.py").read_text(encoding="utf-8-sig")
+        source = (ROOT / "clipforge/clipforge_gui.py").read_text(encoding="utf-8-sig")
         self.assertIn('folder.glob("*.edl.json")', source)
-        self.assertIn('ROOT/"composition_review.py"', source)
+        self.assertIn('clipforge.composition_review', source)
 
 
 if __name__ == "__main__":

@@ -8,14 +8,14 @@ import json
 import math
 import re
 import subprocess
-from silent_process import run as silent_run, popen as silent_popen
+from clipforge.silent_process import run as silent_run, popen as silent_popen
 from datetime import datetime
 from pathlib import Path
 
 import cv2
-from clip_engine import FFMPEG, probe_duration
-from subtitle_presets import caption_ass, choose
-from subject_tracking import tracked_center
+from clipforge.clip_engine import FFMPEG, probe_duration
+from clipforge.subtitle_presets import caption_ass, choose
+from clipforge.subject_tracking import tracked_center
 
 def srt_seconds(value):
     m=re.fullmatch(r"(\d+):(\d\d):(\d\d)[,.](\d{3})",value.strip())

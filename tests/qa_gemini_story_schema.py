@@ -1,6 +1,6 @@
 import json
 from unittest.mock import patch
-from gemini_highlights import request_gemini
+from clipforge.gemini_highlights import request_gemini
 
 sample={"clips":[{"start":4.0,"end":41.0,"score":94,"complete":True,
  "title":"Why the result matters","reason":"A complete mini-story with payoff.",

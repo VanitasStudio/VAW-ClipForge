@@ -1,8 +1,8 @@
 """Small real-audio API test using synthetic sine wave; no personal audio uploaded."""
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from secure_config import load_key
-from gemini_highlights import request_gemini, extract_audio, MODEL
+from clipforge.secure_config import load_key
+from clipforge.gemini_highlights import request_gemini, extract_audio, MODEL
 source=Path(__file__).with_name("samples")/"synthetic-demo.mp4"
 with TemporaryDirectory(prefix="vaw-audio-test-") as temp:
     file=Path(temp)/"tone.mp3"

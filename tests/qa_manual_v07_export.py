@@ -1,6 +1,6 @@
 from pathlib import Path
-from review_core import load_clip,export_review
-from subject_tracking import track_subject
+from clipforge.review_core import load_clip,export_review
+from clipforge.subject_tracking import track_subject
 base=Path(__file__).resolve().parents[1]
 src=base/"exports"/"videoplayback"/"videoplayback_v04_01_00243s_rev3.mp4"
 data=load_clip(src)

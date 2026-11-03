@@ -1,4 +1,4 @@
-from clipforge_gui import ClipForge
+from clipforge.clipforge_gui import ClipForge
 app=ClipForge()
 app.root.withdraw()
 app.root.update_idletasks()

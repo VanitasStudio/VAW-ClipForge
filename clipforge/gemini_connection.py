@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 import urllib.error
 import urllib.request
-from secure_config import load_key
-from gemini_highlights import ENDPOINT, MODEL
+from clipforge.secure_config import load_key
+from clipforge.gemini_highlights import ENDPOINT, MODEL
 
 def test_gemini_connection(model=MODEL) -> str:
     key=load_key()

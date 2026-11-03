@@ -5,11 +5,11 @@ from __future__ import annotations
 import os
 import re
 import subprocess
-from silent_process import run as silent_run, popen as silent_popen
+from clipforge.silent_process import run as silent_run, popen as silent_popen
 from pathlib import Path
-from auto_captions import get_model, stamp
-from clip_engine import FFMPEG
-from subtitle_presets import caption_ass, choose
+from clipforge.auto_captions import get_model, stamp
+from clipforge.clip_engine import FFMPEG
+from clipforge.subtitle_presets import caption_ass, choose
 
 STOPWORDS={"a","an","and","are","as","at","be","by","for","from","has","he",
            "her","his","i","in","is","it","its","of","on","or","our","she",

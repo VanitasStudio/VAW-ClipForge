@@ -56,7 +56,7 @@ def load_brand_fonts():
     """Register bundled Archivo and Quantico privately for this process."""
     if os.name != "nt":
         return
-    font_dir = Path(__file__).resolve().parent / "assets" / "fonts"
+    font_dir = Path(__file__).resolve().parent.parent / "assets" / "fonts"
     add_font = ctypes.windll.gdi32.AddFontResourceExW
     for filename in ("Archivo.ttf", "Quantico-Regular.ttf", "Quantico-Bold.ttf"):
         path = font_dir / filename

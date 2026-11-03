@@ -7,7 +7,7 @@ from __future__ import annotations
 import base64
 import os
 import subprocess
-from silent_process import run as silent_run, popen as silent_popen
+from clipforge.silent_process import run as silent_run, popen as silent_popen
 from pathlib import Path
 
 CONFIG_DIR = Path(os.environ.get("APPDATA", str(Path.home()))) / "VAW-ClipForge"

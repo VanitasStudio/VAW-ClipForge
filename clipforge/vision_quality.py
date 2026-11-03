@@ -5,7 +5,7 @@ import hashlib
 import math
 from dataclasses import dataclass
 
-from vision_provider import VisionFrame
+from clipforge.vision_provider import VisionFrame
 
 
 @dataclass(frozen=True)

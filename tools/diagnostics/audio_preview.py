@@ -6,10 +6,10 @@ from __future__ import annotations
 import tempfile
 import time
 import subprocess
-from silent_process import run as silent_run, popen as silent_popen
+from clipforge.silent_process import run as silent_run, popen as silent_popen
 from pathlib import Path
 import winsound
-from clip_engine import FFMPEG
+from clipforge.clip_engine import FFMPEG
 
 class AudioPreview:
     def __init__(self):

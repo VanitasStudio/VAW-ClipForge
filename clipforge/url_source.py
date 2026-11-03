@@ -16,7 +16,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 import yt_dlp
-from clip_engine import FFMPEG
+from clipforge.clip_engine import FFMPEG
 
 # yt-dlp uses its own subprocess.Popen subclass for FFmpeg merge. Keep that
 # subclass's Windows startup setting explicitly hidden (SW_HIDE).
@@ -27,7 +27,7 @@ if os.name=="nt":
         YtDlpPopen._startupinfo.dwFlags |= _subprocess.STARTF_USESHOWWINDOW
         YtDlpPopen._startupinfo.wShowWindow = _subprocess.SW_HIDE
 
-ROOT=Path(__file__).resolve().parent
+ROOT=Path(__file__).resolve().parent.parent
 CACHE=ROOT/"url-cache"
 BIN=ROOT/"bin"
 SAFE_DOMAINS=("youtube.com","youtu.be","youtube-nocookie.com",

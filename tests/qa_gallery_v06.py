@@ -3,7 +3,7 @@ import ctypes
 from ctypes import wintypes
 from pathlib import Path
 from PIL import ImageGrab
-from review_editor import ReviewEditor
+from clipforge.review_editor import ReviewEditor
 ed=ReviewEditor()
 def capture():
     handles=[]

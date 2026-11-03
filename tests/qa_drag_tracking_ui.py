@@ -1,7 +1,7 @@
 """Exercise Review Studio's drag box and track callback on authorized local video."""
 from types import SimpleNamespace
 from pathlib import Path
-from review_editor import ReviewEditor
+from clipforge.review_editor import ReviewEditor
 clip=Path(__file__).resolve().parents[1]/"exports"/"videoplayback"/"videoplayback_v04_01_00243s_rev3.mp4"
 editor=ReviewEditor(clip)
 def act():

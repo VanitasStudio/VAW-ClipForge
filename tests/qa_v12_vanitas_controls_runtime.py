@@ -2,7 +2,7 @@ from pathlib import Path
 import tkinter as tk
 import unittest
 
-from vanitas_widgets import (
+from clipforge.vanitas_widgets import (
     VanitasCombo, VanitasScrollbar, VanitasSlider, VanitasSpinbox,
     VanitasCheckbutton, VanitasEntry, VanitasButton,
 )
@@ -148,7 +148,7 @@ class VanitasControlsRuntimeTests(unittest.TestCase):
         self.assertEqual(calls, ["run"])
 
     def test_rounded_surfaces_use_smooth_canvas_primitives(self):
-        from vanitas_widgets import _rounded_rect
+        from clipforge.vanitas_widgets import _rounded_rect
         canvas = tk.Canvas(self.root, width=120, height=40)
         canvas.pack()
         _rounded_rect(canvas, 1, 1, 119, 39, 9, fill="#075BFF", outline="#20BFFF")

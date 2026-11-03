@@ -4,12 +4,12 @@ Uses faster-whisper on CPU. Downloads the requested model once, no voice upload.
 from __future__ import annotations
 import os
 import subprocess
-from silent_process import run as silent_run, popen as silent_popen
+from clipforge.silent_process import run as silent_run, popen as silent_popen
 import tempfile
 from pathlib import Path
-from clip_engine import FFMPEG
+from clipforge.clip_engine import FFMPEG
 
-BASE=Path(__file__).resolve().parent
+BASE=Path(__file__).resolve().parent.parent
 MODEL_HOME=BASE/"models"
 WHISPER_MODELS={"tiny","base","small"}
 

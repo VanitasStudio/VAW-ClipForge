@@ -7,11 +7,11 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 
-from clip_engine import FFMPEG
-from clipforge_contracts import AnalysisBundle, EditDecisionList, dumps_contract, validate_edl
-from silent_process import run as silent_run
-from smart_reframe import export_v04
-from subtitle_presets import caption_ass
+from clipforge.clip_engine import FFMPEG
+from clipforge.clipforge_contracts import AnalysisBundle, EditDecisionList, dumps_contract, validate_edl
+from clipforge.silent_process import run as silent_run
+from clipforge.smart_reframe import export_v04
+from clipforge.subtitle_presets import caption_ass
 
 
 def _unique_output(path: Path) -> Path:

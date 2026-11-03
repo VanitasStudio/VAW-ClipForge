@@ -5,15 +5,15 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from clipforge_contracts import (
+from clipforge.clipforge_contracts import (
     AnalysisBundle, CaptionPlan, EditorialEvent, SegmentRole, TranscriptSpan,
     CompositionStrategy, RenderSettings, TransitionKind, TransitionSpec,
 )
-from composition_renderer import render_composition
-from composition_review import load_bundle, load_edl
-from story_composer import build_composition
-from unified_analyzer import probe_source
-from clip_engine import probe_duration
+from clipforge.composition_renderer import render_composition
+from clipforge.composition_review import load_bundle, load_edl
+from clipforge.story_composer import build_composition
+from clipforge.unified_analyzer import probe_source
+from clipforge.clip_engine import probe_duration
 
 
 ROOT = Path(__file__).resolve().parents[1]

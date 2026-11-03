@@ -1,6 +1,6 @@
 ﻿import unittest
 
-from clipforge_contracts import (
+from clipforge.clipforge_contracts import (
     AudioContinuity, CompositionSegment, CompositionStrategy, EditDecisionList,
     MediaSource, SegmentRole, TransitionKind, TransitionSpec, dumps_contract,
     validate_edl,

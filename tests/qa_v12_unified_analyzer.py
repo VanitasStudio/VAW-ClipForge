@@ -6,8 +6,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from clipforge_contracts import MediaSource
-import unified_analyzer as analyzer
+from clipforge.clipforge_contracts import MediaSource
+import clipforge.unified_analyzer as analyzer
 
 
 class UnifiedAnalyzerTests(unittest.TestCase):
@@ -64,11 +64,11 @@ class UnifiedAnalyzerTests(unittest.TestCase):
 
     def test_analyze_source_reuses_existing_analyzers(self):
         with patch.object(analyzer, "probe_source", return_value=self.media), \
-             patch("smart_duration.analyze_boundaries", return_value=[
+             patch("clipforge.smart_duration.analyze_boundaries", return_value=[
                  {"start": 1, "end": 2, "text": "Local transcript."}
              ]), \
-             patch("smart_reframe.shot_boundaries", return_value=[45.0]), \
-             patch("gemini_highlights.process_ai", return_value={
+             patch("clipforge.smart_reframe.shot_boundaries", return_value=[45.0]), \
+             patch("clipforge.gemini_highlights.process_ai", return_value={
                  "ranked_candidates": [
                      {"start": 10, "end": 25, "title": "A moment", "score": 80},
                      {"start": 35, "end": 50, "title": "Second moment", "score": 76}
@@ -102,9 +102,9 @@ class UnifiedAnalyzerTests(unittest.TestCase):
 
     def test_failed_optional_stage_is_reported_without_losing_other_data(self):
         with patch.object(analyzer, "probe_source", return_value=self.media), \
-             patch("smart_duration.analyze_boundaries", side_effect=RuntimeError("offline")), \
-             patch("smart_reframe.shot_boundaries", return_value=[]), \
-             patch("gemini_highlights.process_ai", return_value={
+             patch("clipforge.smart_duration.analyze_boundaries", side_effect=RuntimeError("offline")), \
+             patch("clipforge.smart_reframe.shot_boundaries", return_value=[]), \
+             patch("clipforge.gemini_highlights.process_ai", return_value={
                  "ranked_candidates": [
                      {"start": 12, "end": 30, "title": "Still usable", "score": 72}
                  ]
@@ -116,7 +116,7 @@ class UnifiedAnalyzerTests(unittest.TestCase):
         self.assertTrue(any("transcript" in warning.lower() for warning in bundle.warnings))
 
     def test_optional_vision_provider_fuses_frames_and_story_order(self):
-        from vision_provider import VisionFrame, VisionResult
+        from clipforge.vision_provider import VisionFrame, VisionResult
 
         class FakeVision:
             name = "qa-vision"
@@ -131,11 +131,11 @@ class UnifiedAnalyzerTests(unittest.TestCase):
                 )
 
         with patch.object(analyzer, "probe_source", return_value=self.media), \
-             patch("smart_duration.analyze_boundaries", return_value=[
+             patch("clipforge.smart_duration.analyze_boundaries", return_value=[
                  {"start": 1, "end": 2, "text": "Local transcript."}
              ]), \
-             patch("smart_reframe.shot_boundaries", return_value=[45.0]), \
-             patch("gemini_highlights.process_ai", return_value={
+             patch("clipforge.smart_reframe.shot_boundaries", return_value=[45.0]), \
+             patch("clipforge.gemini_highlights.process_ai", return_value={
                  "ranked_candidates": [
                      {"start": 10, "end": 25, "title": "Opening", "score": 90,
                       "visual_notes": "A clear animated hook."},

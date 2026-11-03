@@ -6,7 +6,7 @@ import json
 import os
 from pathlib import Path
 
-from vision_provider import VisionFrame, VisionResult
+from clipforge.vision_provider import VisionFrame, VisionResult
 
 
 def default_vision_cache_dir() -> Path:

@@ -18,7 +18,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from vision_provider import VisionFrame, VisionResult
+from clipforge.vision_provider import VisionFrame, VisionResult
 
 PROVIDER_NAME = "video-vision-mcp"
 MAX_FRAME_BYTES = 1_800_000

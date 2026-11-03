@@ -9,7 +9,7 @@ import json
 import math
 import os
 import subprocess
-from silent_process import run as silent_run, popen as silent_popen
+from clipforge.silent_process import run as silent_run, popen as silent_popen
 import tempfile
 from datetime import datetime
 from pathlib import Path
@@ -17,8 +17,8 @@ from pathlib import Path
 import cv2
 import numpy as np
 from scenedetect import detect, ContentDetector
-from clip_engine import FFMPEG, filter_graph, probe_duration, OUTPUT_SIZES
-from stylish_captions import polish_clip
+from clipforge.clip_engine import FFMPEG, filter_graph, probe_duration, OUTPUT_SIZES
+from clipforge.stylish_captions import polish_clip
 
 SIZE=(720,1280)
 FACE_CASCADE=cv2.CascadeClassifier(cv2.data.haarcascades+"haarcascade_frontalface_default.xml")

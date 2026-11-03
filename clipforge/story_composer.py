@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime
 from math import isfinite
 
-from clipforge_contracts import (
+from clipforge.clipforge_contracts import (
     AnalysisBundle, AudioPlan, CaptionPlan, CompositionSegment,
     CompositionStrategy, EditDecisionList, RenderSettings, SegmentRole,
     TransitionKind, TransitionSpec, validate_edl,

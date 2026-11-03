@@ -9,17 +9,17 @@ from PIL import Image, ImageTk
 from dataclasses import replace
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
-from vanitas_widgets import VanitasCombo, VanitasEntry, VanitasButton, VanitasCheckbutton, load_brand_fonts
+from clipforge.vanitas_widgets import VanitasCombo, VanitasEntry, VanitasButton, VanitasCheckbutton, load_brand_fonts
 
-from clipforge_contracts import (
+from clipforge.clipforge_contracts import (
     AnalysisBundle, AudioContinuity, AudioPlan, CaptionPlan, CompositionSegment,
     EditorialEvent,
     CompositionStrategy, EditDecisionList, MediaSource, RenderSettings,
     SceneSpan, SegmentRole, TranscriptSpan, TransitionKind, TransitionSpec,
     validate_edl,
 )
-from composition_renderer import render_composition
-from unified_analyzer import probe_source
+from clipforge.composition_renderer import render_composition
+from clipforge.unified_analyzer import probe_source
 
 
 def load_bundle(path: str | Path) -> AnalysisBundle:
@@ -232,7 +232,7 @@ class CompositionReview:
                 right,text=text,variable=variable,bg=card,
                 fg=white,font=("Archivo",8),
             ).pack(anchor="w",padx=16,pady=2)
-        from subtitle_presets import PRESETS
+        from clipforge.subtitle_presets import PRESETS
         VanitasCombo(
             right,textvariable=self.caption_style_var,state="readonly",
             values=[preset.id for preset in PRESETS],width=24,
@@ -507,7 +507,7 @@ class CompositionReview:
     def _save(self):
         if not self._validated():
             return
-        from clipforge_contracts import to_dict
+        from clipforge.clipforge_contracts import to_dict
         self.edl_path.write_text(
             json.dumps(to_dict(self.edl), ensure_ascii=False, indent=2),
             encoding="utf-8",

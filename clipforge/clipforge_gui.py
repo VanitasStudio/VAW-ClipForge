@@ -5,25 +5,25 @@ import sys
 import subprocess
 import ctypes
 import argparse
-from silent_process import run as silent_run, popen as silent_popen
+from clipforge.silent_process import run as silent_run, popen as silent_popen
 import queue
 import threading
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, simpledialog
-from vanitas_widgets import (VanitasCombo, VanitasScrollbar, VanitasEntry, VanitasSpinbox, VanitasCheckbutton, VanitasButton)
+from clipforge.vanitas_widgets import (VanitasCombo, VanitasScrollbar, VanitasEntry, VanitasSpinbox, VanitasCheckbutton, VanitasButton)
 
-from clip_engine import process as process_local
-from gemini_highlights import process_ai, MODEL
-from secure_config import save_key, has_key, delete_key
-from gemini_connection import test_gemini_connection
-from smart_reframe import export_v04
-from url_source import (validate_url,check_link,fetch_video,clear_cache,cache_stats)
-from subtitle_presets import PRESETS, preview_image
+from clipforge.clip_engine import process as process_local
+from clipforge.gemini_highlights import process_ai, MODEL
+from clipforge.secure_config import save_key, has_key, delete_key
+from clipforge.gemini_connection import test_gemini_connection
+from clipforge.smart_reframe import export_v04
+from clipforge.url_source import (validate_url,check_link,fetch_video,clear_cache,cache_stats)
+from clipforge.subtitle_presets import PRESETS, preview_image
 from PIL import ImageTk
 
-BUNDLE_ROOT=Path(getattr(sys,"_MEIPASS",Path(__file__).resolve().parent))
-ROOT=Path(sys.executable).resolve().parent if getattr(sys,"frozen",False) else Path(__file__).resolve().parent
+BUNDLE_ROOT=Path(getattr(sys,"_MEIPASS",Path(__file__).resolve().parent.parent))
+ROOT=Path(sys.executable).resolve().parent if getattr(sys,"frozen",False) else Path(__file__).resolve().parent.parent
 ASSET_ROOT=BUNDLE_ROOT/"assets"
 C={"bg":"#05070B","card":"#101827","white":"#DCE6F5",
    "muted":"#8E9DB4","red":"#075BFF","blue":"#075BFF",
@@ -552,10 +552,10 @@ class ClipForge:
                     if use_vision:
                         self.messages.put(("log","Video Vision MCP: extracting a bounded set of local frames..."))
                         try:
-                            from video_vision_adapter import VideoVisionMCPProvider
-                            from vision_cache import CachedVisionProvider
-                            from vision_quality import filter_vision_frames
-                            from clip_engine import probe_duration
+                            from clipforge.video_vision_adapter import VideoVisionMCPProvider
+                            from clipforge.vision_cache import CachedVisionProvider
+                            from clipforge.vision_quality import filter_vision_frames
+                            from clipforge.clip_engine import probe_duration
                             vision_provider=CachedVisionProvider(VideoVisionMCPProvider())
                             vision_result=vision_provider.analyze(
                                 current,duration_seconds=float(probe_duration(current)),
@@ -611,14 +611,14 @@ class ClipForge:
                 if smart_compilation or narrative_reconstruction:
                     self.messages.put(("log","Building the unified analysis bundle for Story Composer..."))
                     from dataclasses import replace
-                    from unified_analyzer import probe_source, build_analysis_bundle
-                    from smart_reframe import shot_boundaries
-                    from gemini_highlights import request_story_compositions
-                    from clipforge_contracts import (
+                    from clipforge.unified_analyzer import probe_source, build_analysis_bundle
+                    from clipforge.smart_reframe import shot_boundaries
+                    from clipforge.gemini_highlights import request_story_compositions
+                    from clipforge.clipforge_contracts import (
                         CaptionPlan, CompositionStrategy, RenderSettings,
                     )
-                    from story_composer import build_composition
-                    from composition_renderer import render_composition
+                    from clipforge.story_composer import build_composition
+                    from clipforge.composition_renderer import render_composition
 
                     media=probe_source(current)
                     cuts=shot_boundaries(current) if scene else []
@@ -630,7 +630,7 @@ class ClipForge:
                     )
                     if vision_result is not None:
                         try:
-                            from multimodal_fusion import fuse_visual_evidence
+                            from clipforge.multimodal_fusion import fuse_visual_evidence
                             bundle=fuse_visual_evidence(bundle,vision_result,max_frames=8)
                         except Exception as fusion_exc:
                             self.messages.put(("log",f"Visual evidence fusion skipped: {str(fusion_exc)[:160]}"))
@@ -692,7 +692,7 @@ class ClipForge:
                 if not successes:
                     raise RuntimeError("No requested output completed. " + " | ".join(failures))
                 try:
-                    from title_hashtag_suggestions import write_suggestion_markdown
+                    from clipforge.title_hashtag_suggestions import write_suggestion_markdown
                     suggestion_file=write_suggestion_markdown(
                         dest,
                         suggestion_items,
@@ -782,7 +782,7 @@ class ClipForge:
                 chosen=Path(selected)
             args=([sys.executable,"--composition-review","--edl",str(chosen)]
                   if getattr(sys,"frozen",False)
-                  else [sys.executable,str(ROOT/"composition_review.py"),"--edl",str(chosen)])
+                  else [sys.executable,"-m","clipforge.composition_review","--edl",str(chosen)])
             try:
                 silent_popen(args,cwd=str(ROOT))
                 self.log("Multi-segment Composition Review Studio opened.")
@@ -801,7 +801,7 @@ class ClipForge:
             except (OSError,ValueError,KeyError):
                 pass
         args=([sys.executable,"--review-editor"] if getattr(sys,"frozen",False)
-              else [sys.executable,str(ROOT/"review_editor.py")])
+              else [sys.executable,"-m","clipforge.review_editor"])
         if candidate:args.extend(["--clip",str(candidate)])
         try:
             silent_popen(args,cwd=str(ROOT))
@@ -815,12 +815,12 @@ class ClipForge:
 
 def main():
     if "--composition-review" in sys.argv:
-        from composition_review import main as review_main
+        from clipforge.composition_review import main as review_main
         sys.argv=[sys.argv[0]]+[arg for arg in sys.argv[1:] if arg!="--composition-review"]
         review_main()
         return
     if "--review-editor" in sys.argv:
-        from review_editor import main as editor_main
+        from clipforge.review_editor import main as editor_main
         sys.argv=[sys.argv[0]]+[arg for arg in sys.argv[1:] if arg!="--review-editor"]
         editor_main()
         return

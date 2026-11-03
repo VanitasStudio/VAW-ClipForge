@@ -10,16 +10,16 @@ import json
 import math
 import re
 import subprocess
-from silent_process import run as silent_run, popen as silent_popen
+from clipforge.silent_process import run as silent_run, popen as silent_popen
 import tempfile
 import urllib.error
 import urllib.request
 from datetime import datetime
 from pathlib import Path
-from clip_engine import FFMPEG, EXTS, filter_graph, probe_duration
-from secure_config import load_key
-from smart_duration import analyze_boundaries, align_interval
-from editorial_intelligence import enrich_candidate, write_editorial_report
+from clipforge.clip_engine import FFMPEG, EXTS, filter_graph, probe_duration
+from clipforge.secure_config import load_key
+from clipforge.smart_duration import analyze_boundaries, align_interval
+from clipforge.editorial_intelligence import enrich_candidate, write_editorial_report
 
 MODEL = "gemini-3.6-flash"
 CHUNK_SECONDS = 240
@@ -459,7 +459,7 @@ def request_story_compositions(events, key=None, model=MODEL, provider=None):
     Only candidate-level editorial summaries and timestamps are sent. The full
     source transcript and original video remain on the user's machine.
     """
-    from clipforge_contracts import SegmentRole
+    from clipforge.clipforge_contracts import SegmentRole
 
     allowed_roles = {role.value for role in SegmentRole}
     compact = []
