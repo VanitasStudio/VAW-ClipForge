@@ -9,7 +9,7 @@ import threading
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
-from vanitas_widgets import VanitasCombo
+from vanitas_widgets import VanitasCombo, VanitasScrollbar, VanitasEntry, VanitasButton, VanitasSlider, load_brand_fonts
 
 import cv2
 from PIL import Image, ImageDraw, ImageFont, ImageTk
@@ -27,6 +27,7 @@ DEFAULT_CLIP=ROOT/"exports"/"videoplayback"/"videoplayback_v04_01_00243s_rev3.mp
 
 class ReviewEditor:
     def __init__(self,clip=None):
+        load_brand_fonts()
         self.app=tk.Tk()
         self.app.title("VAW ClipForge v0.7 | Universal Object Review")
         self.app.configure(bg=COLORS["bg"])
@@ -62,11 +63,8 @@ class ReviewEditor:
                         **kw)
 
     def btn(self,parent,text,command,important=False):
-        return tk.Button(parent,text=text,command=command,relief="flat",bd=0,
-                         font=("Archivo",10),padx=13,pady=8,
-                         cursor="hand2",fg="white",activeforeground="white",
-                         bg=COLORS["red"] if important else COLORS["surface"],
-                         activebackground="#ac2f48" if important else "#39465a")
+        return VanitasButton(parent,text=text,command=command,primary=important,
+                             font=("Archivo",10,"bold"),padx=13,pady=8)
 
     def build(self):
         header=tk.Frame(self.app,bg=COLORS["bg"])
@@ -111,11 +109,11 @@ class ReviewEditor:
         self.source_preview.bind("<ButtonRelease-1>",self.selection_end)
         self.source_photo=None
         self.label(info,"Focus position  •  LEFT  ←  →  RIGHT",10,"sub").pack(anchor="w")
-        self.focus_control=tk.Scale(info,variable=self.focus,from_=0,to=100,resolution=0.2,
-                                    command=self.focus_changed,orient="horizontal",length=440,
-                                    showvalue=True,fg=COLORS["text"],bg=COLORS["bg"],
-                                    activebackground=COLORS["red"],highlightthickness=0,
-                                    troughcolor=COLORS["surface"])
+        self.focus_control=VanitasSlider(info,variable=self.focus,from_=0,to=100,resolution=0.2,
+                                         command=self.focus_changed,length=440,
+                                         showvalue=True,bg=COLORS["bg"],
+                                         activebackground=COLORS["blue"],
+                                         troughcolor=COLORS["surface"])
         self.focus_control.pack(anchor="w")
         trackbuttons=tk.Frame(info,bg=COLORS["bg"])
         trackbuttons.pack(anchor="w",pady=(4,0))
@@ -134,11 +132,11 @@ class ReviewEditor:
         self.time_label=self.label(controls,"00:00 / 00:30",11,bold=True)
         self.time_label.pack(side="left")
         self.label(controls,"Audio clock preview - near-real-time sync",9,"sub").pack(side="right")
-        self.scale=tk.Scale(left,variable=self.position,from_=0,to=30,
-                            resolution=0.1,command=self.scrub,
-                            orient="horizontal",length=710,showvalue=False,
-                            bg=COLORS["bg"],fg="white",highlightthickness=0,
-                            troughcolor=COLORS["surface"],activebackground=COLORS["red"])
+        self.scale=VanitasSlider(left,variable=self.position,from_=0,to=30,
+                                 resolution=0.1,command=self.scrub,length=710,
+                                 showvalue=False,bg=COLORS["bg"],
+                                 troughcolor=COLORS["surface"],
+                                 activebackground=COLORS["blue"])
         self.scale.pack(fill="x",pady=(0,4))
         self.timeline=tk.Canvas(left,height=70,bg=COLORS["panel"],highlightthickness=0,
                                 cursor="hand2")
@@ -175,9 +173,7 @@ class ReviewEditor:
         for name,width in (("start",68),("end",68),("text",312)):
             self.subtitles.heading(name,text=name.upper())
             self.subtitles.column(name,width=width,anchor="w")
-        caption_scroll=tk.Scrollbar(caption_panel,orient="vertical",command=self.subtitles.yview,
-            bg=COLORS["surface"],troughcolor=COLORS["bg"],activebackground=COLORS["blue"],
-            highlightthickness=0,bd=0,relief="flat")
+        caption_scroll=VanitasScrollbar(caption_panel,orient="vertical",command=self.subtitles.yview)
         self.subtitles.configure(yscrollcommand=caption_scroll.set)
         self.subtitles.pack(side="left",fill="both",expand=True)
         caption_scroll.pack(side="right",fill="y")
@@ -232,9 +228,9 @@ class ReviewEditor:
         style.configure("TCombobox",fieldbackground=COLORS["surface"])
 
     def entry(self,parent,var,width=8):
-        return tk.Entry(parent,textvariable=var,width=width,relief="flat",
-                        bg=COLORS["panel"],fg=COLORS["text"],insertbackground="white",
-                        font=("Archivo",11))
+        return VanitasEntry(parent,textvariable=var,width=width,
+                            bg=COLORS["surface"],fg=COLORS["text"],
+                            insertbackground="white",font=("Archivo",11))
 
     def browse(self):
         path=filedialog.askopenfilename(title="Open ClipForge v0.4 export",

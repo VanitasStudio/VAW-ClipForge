@@ -9,7 +9,7 @@ from PIL import Image, ImageTk
 from dataclasses import replace
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
-from vanitas_widgets import VanitasCombo
+from vanitas_widgets import VanitasCombo, VanitasEntry, VanitasButton, VanitasCheckbutton, load_brand_fonts
 
 from clipforge_contracts import (
     AnalysisBundle, AudioContinuity, AudioPlan, CaptionPlan, CompositionSegment,
@@ -95,6 +95,7 @@ def load_edl(path: str | Path) -> EditDecisionList:
 
 class CompositionReview:
     def __init__(self, edl_path: str | Path):
+        load_brand_fonts()
         self.edl_path = Path(edl_path).resolve()
         self.manifest_path = self.edl_path.with_name(
             self.edl_path.name.replace(".edl.json", ".composition.json")
@@ -208,9 +209,9 @@ class CompositionReview:
         )
         self.caption_list.pack(fill="x",padx=16)
         self.caption_list.bind("<<ListboxSelect>>",self._on_caption_select)
-        tk.Entry(
+        VanitasEntry(
             right,textvariable=self.caption_var,bg="#18222D",fg=white,
-            insertbackground="white",relief="flat",bd=0,font=("Archivo",9),
+            insertbackground="white",font=("Archivo",9),
         ).pack(fill="x",padx=16,pady=(5,4),ipady=6)
         self._button(right,"Apply Caption Text",self._apply_caption).pack(anchor="e",padx=16,pady=(0,8))
 
@@ -227,12 +228,10 @@ class CompositionReview:
             (self.caption_upper_var,"Uppercase caption text"),
             (self.audio_crossfade_var,"Smooth audio at segment cuts"),
         ):
-            tk.Checkbutton(
-                right,text=text,variable=variable,anchor="w",
-                bg=card,fg=white,selectcolor="#354158",
-                activebackground=card,activeforeground=white,
-                font=("Archivo",8),padx=0,pady=1,
-            ).pack(anchor="w",padx=16)
+            VanitasCheckbutton(
+                right,text=text,variable=variable,bg=card,
+                fg=white,font=("Archivo",8),
+            ).pack(anchor="w",padx=16,pady=2)
         from subtitle_presets import PRESETS
         VanitasCombo(
             right,textvariable=self.caption_style_var,state="readonly",
@@ -254,23 +253,16 @@ class CompositionReview:
         self._button(footer, "Save EDL", self._save).pack(side="right", padx=8)
 
     def _button(self, parent, text, command, primary=False):
-        return tk.Button(
-            parent, text=text, command=command, relief="flat", bd=0,
-            bg="#3B82F6" if primary else "#1D2A38", fg="#D9E0E8",
-            activebackground="#60A5FA" if primary else "#26384C",
-            activeforeground="#ffffff", cursor="hand2",
-            padx=12, pady=8, font=("Archivo", 9),
-        )
+        return VanitasButton(parent,text=text,command=command,primary=primary,
+                             font=("Archivo",9,"bold"),padx=12,pady=8)
 
     def _field(self, parent, label, variable):
         tk.Label(parent, text=label, bg="#111820", fg="#8793A3",
                  font=("Archivo", 9)).pack(anchor="w", padx=16, pady=(8, 3))
-        tk.Entry(
-            parent, textvariable=variable, bg="#18222D", fg="#D9E0E8",
-            insertbackground="white", relief="flat", bd=0,
-            font=("Archivo", 10), highlightthickness=1,
-            highlightbackground="#263342",
-        ).pack(fill="x", padx=16, ipady=7)
+        VanitasEntry(
+            parent,textvariable=variable,bg="#18222D",fg="#D9E0E8",
+            insertbackground="white",font=("Archivo",10),
+        ).pack(fill="x",padx=16,ipady=7)
 
     def _refresh_list(self):
         self.listbox.delete(0, "end")

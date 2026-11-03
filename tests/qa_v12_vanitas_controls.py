@@ -7,7 +7,16 @@ for name in ACTIVE:
     source = (ROOT / name).read_text(encoding="utf-8")
     ast.parse(source)
     assert "ttk.Combobox(" not in source, f"Native combobox remains in {name}"
-    assert "from vanitas_widgets import VanitasCombo" in source
+    assert "from vanitas_widgets import" in source and "VanitasCombo" in source
+    assert "tk.Scrollbar(" not in source, f"Native scrollbar remains in {name}"
+    assert "tk.Spinbox(" not in source, f"Native spinbox remains in {name}"
+    assert "tk.Checkbutton(" not in source, f"Native checkbox remains in {name}"
+    assert "tk.Scale(" not in source, f"Native slider remains in {name}"
+    assert "VanitasButton" in source
+    if name == "review_editor.py":
+        assert "VanitasSlider" in source
+    if name != "composition_review.py":
+        assert "VanitasScrollbar" in source
 widgets = (ROOT / "vanitas_widgets.py").read_text(encoding="utf-8")
 ast.parse(widgets)
 for token in ("#0B0F14", "#111820", "#18222D", "#3B82F6", "Archivo", "<<ComboboxSelected>>"):

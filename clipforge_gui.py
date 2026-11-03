@@ -10,8 +10,8 @@ import queue
 import threading
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog, messagebox, simpledialog, ttk
-from vanitas_widgets import VanitasCombo
+from tkinter import filedialog, messagebox, simpledialog
+from vanitas_widgets import (VanitasCombo, VanitasScrollbar, VanitasEntry, VanitasSpinbox, VanitasCheckbutton, VanitasButton)
 
 from clip_engine import process as process_local
 from gemini_highlights import process_ai, MODEL
@@ -83,7 +83,8 @@ class ClipForge:
         self.last_export=None
         self.messages=queue.Queue()
         self.create_ui()
-        self.root.after(200,self.poll)
+        self._poll_after_id=self.root.after(200,self.poll)
+        self.root.protocol("WM_DELETE_WINDOW",self.close)
 
     def label(self,parent,text,size=10,color="white",bold=False):
         font=("Archivo",size,"bold" if bold else "normal")
@@ -92,39 +93,13 @@ class ClipForge:
     def button(self,parent,text,fn,primary=False):
         normal=C["red"] if primary else C["raised"]
         hover="#60A5FA" if primary else "#2E4054"
-        widget=tk.Button(parent,text=text,command=fn,relief="flat",bd=0,
-                         cursor="hand2",padx=15,pady=9,
-                         bg=normal,fg=C["white"],
-                         activebackground=hover,activeforeground=C["white"],
-                         font=("Archivo",10,"bold"),highlightthickness=0)
-        widget.bind("<Enter>",lambda _e:widget.configure(bg=hover))
-        widget.bind("<Leave>",lambda _e:widget.configure(bg=normal))
-        return widget
+        return VanitasButton(parent,text=text,command=fn,primary=primary,
+                             font=("Archivo",10,"bold"),padx=15,pady=9)
     def entry(self,parent,var):
-        widget=tk.Entry(parent,textvariable=var,font=("Archivo",10),
-                        bg=C["field"],fg=C["white"],insertbackground="white",
-                        relief="flat",highlightthickness=1,
-                        highlightbackground=C["line"],highlightcolor="#60A5FA",
-                        bd=0)
-        return widget
+        return VanitasEntry(parent,textvariable=var,font=("Archivo",10),
+                            bg=C["field"],fg=C["white"],insertbackground="white")
     def create_ui(self):
         # Refined desktop layout: clear sections, readable spacing and a fixed action area.
-        style=ttk.Style(self.root)
-        try:
-            style.theme_use("clam")
-        except tk.TclError:
-            pass
-        style.configure("TCombobox",fieldbackground=C["field"],background=C["raised"],
-                        foreground=C["white"],arrowcolor=C["white"],borderwidth=0,
-                        padding=(9,7),selectbackground=C["raised"],
-                        selectforeground=C["white"])
-        style.map("TCombobox",
-                  fieldbackground=[("readonly",C["field"]),("focus","#26344a")],
-                  foreground=[("readonly",C["white"])],
-                  selectbackground=[("readonly",C["raised"])])
-        style.configure("Vertical.TScrollbar",background=C["raised"],
-                        troughcolor=C["bg"],bordercolor=C["bg"],arrowcolor=C["muted"])
-
         shell=tk.Frame(self.root,bg=C["bg"])
         shell.pack(fill="both",expand=True,padx=26,pady=20)
 
@@ -141,16 +116,14 @@ class ClipForge:
                  font=("Quantico",21)).pack(anchor="w")
         tk.Label(brand,text="VANITAS STUDIO",bg=C["bg"],fg=C["muted"],
                  font=("Archivo",8,"bold")).pack(anchor="w",pady=(0,1))
-        tk.Label(header,text="V1.2  /  EDITORIAL WORKSPACE",bg=C["bg"],fg=C["muted"],
+        tk.Label(header,text="V1.2.1  /  EDITORIAL WORKSPACE",bg=C["bg"],fg=C["muted"],
                  font=("Archivo",8,"bold")).pack(side="right",anchor="center")
 
         # Scrollable settings; the primary action and activity log stay visible.
         scroll_area=tk.Frame(shell,bg=C["bg"])
         scroll_area.pack(fill="both",expand=True)
         canvas=tk.Canvas(scroll_area,bg=C["bg"],highlightthickness=0,bd=0)
-        scrollbar=tk.Scrollbar(scroll_area,orient="vertical",command=canvas.yview,
-            bg=C["raised"],troughcolor=C["bg"],activebackground=C["blue"],
-            highlightthickness=0,bd=0,relief="flat")
+        scrollbar=VanitasScrollbar(scroll_area,orient="vertical",command=canvas.yview)
         canvas.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side="right",fill="y")
         canvas.pack(side="left",fill="both",expand=True)
@@ -214,11 +187,8 @@ class ClipForge:
             box.grid(row=0,column=col,sticky="ew",padx=(0 if col==0 else 12,8))
             label(box,title,9,"muted",True).pack(anchor="w",pady=(0,7))
             if kind=="spin":
-                widget=tk.Spinbox(box,from_=opts[0],to=opts[1],width=9,
-                    textvariable=var,bg=C["field"],fg=C["white"],
-                    insertbackground="white",buttonbackground=C["hover"],
-                    relief="flat",bd=0,font=("Archivo",11),
-                    highlightthickness=1,highlightbackground=C["line"])
+                widget=VanitasSpinbox(box,from_=opts[0],to=opts[1],width=9,
+                    textvariable=var,font=("Archivo",11))
             else:
                 widget=VanitasCombo(box,textvariable=var,state="readonly",
                                     values=opts[0],width=11)
@@ -234,23 +204,14 @@ class ClipForge:
             (self.narrative_output,"Story Composer  -  Narrative Reconstruction",1,0),
         ]
         for variable,text,row,col in output_checks:
-            tk.Checkbutton(
-                outputs,text=text,variable=variable,anchor="w",
-                bg=C["card"],fg=C["white"],selectcolor=C["hover"],
-                activebackground=C["card"],activeforeground=C["white"],
-                font=("Archivo",9),padx=2,pady=5,
-                highlightthickness=0,
-            ).grid(row=row,column=col,sticky="w",padx=(0,12))
+            VanitasCheckbutton(outputs,text=text,variable=variable,
+                bg=C["card"],font=("Archivo",9)).grid(
+                    row=row,column=col,sticky="w",padx=(0,12),pady=4)
         story_target=tk.Frame(outputs,bg=C["card"])
         story_target.grid(row=1,column=1,sticky="e")
         label(story_target,"COMPOSED DURATION (12 - 180s)",9,"muted",True).pack(side="left",padx=(0,9))
-        tk.Spinbox(
-            story_target,from_=12,to=180,width=7,textvariable=self.story_seconds,
-            bg=C["field"],fg=C["white"],insertbackground="white",
-            buttonbackground=C["hover"],relief="flat",bd=0,
-            font=("Archivo",10),highlightthickness=1,
-            highlightbackground=C["line"],
-        ).pack(side="left",ipady=3)
+        VanitasSpinbox(story_target,from_=12,to=180,width=7,
+            textvariable=self.story_seconds,font=("Archivo",10)).pack(side="left")
 
         # 03  -  AI engine.
         ai=section("AI ENGINE","")
@@ -289,11 +250,9 @@ class ClipForge:
             (self.video_vision,"Extra local frame sampling (Video Vision MCP)",3,0),
         ]
         for var,text,row,col in checks:
-            tk.Checkbutton(smart,text=text,variable=var,anchor="w",
-                bg=C["card"],fg=C["white"],selectcolor=C["hover"],
-                activebackground=C["card"],activeforeground=C["white"],
-                font=("Archivo",9),padx=2,pady=5,
-                highlightthickness=0).grid(row=row,column=col,sticky="w",padx=(0,12))
+            VanitasCheckbutton(smart,text=text,variable=var,
+                bg=C["card"],font=("Archivo",9)).grid(
+                    row=row,column=col,sticky="w",padx=(0,12),pady=4)
         focus=tk.Frame(smart,bg=C["card"])
         focus.grid(row=4,column=0,columnspan=2,sticky="ew",pady=(8,0))
         label(focus,"AUTO FOCUS",9,"muted",True).pack(side="left",padx=(0,12))
@@ -781,7 +740,16 @@ class ClipForge:
                     else:messagebox.showerror("ClipForge",msg)
         except queue.Empty:
             pass
-        self.root.after(200,self.poll)
+        self._poll_after_id=self.root.after(200,self.poll)
+
+    def close(self):
+        after_id=getattr(self,"_poll_after_id",None)
+        if after_id:
+            try:self.root.after_cancel(after_id)
+            except tk.TclError:pass
+            self._poll_after_id=None
+        self.root.destroy()
+
     def open_editorial_report(self):
         folder=self.last_export if self.last_export and self.last_export.exists() else Path(self.dest.get())/"videoplayback"
         report=folder/"ai-editorial-report.html"

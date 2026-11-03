@@ -29,6 +29,7 @@ print(f"PY_COMPILE_OK: {len(files)} modules")
         "tests.qa_v12_title_hashtags",
         "tests.qa_v12_branding_packaging",
         "tests.qa_v12_vanitas_controls",
+        "tests.qa_v12_vanitas_controls_runtime",
         "tests.qa_v11_ui",
         "tests.qa_v11_gui_smoke"
     )

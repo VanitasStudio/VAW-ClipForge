@@ -1,44 +1,43 @@
 # Repository Structure
 
-ClipForge keeps its Windows entry points and runtime modules at the project root so the existing desktop launchers and local imports remain compatible. Supporting material is grouped by purpose.
+The three Windows application entry modules and their single-purpose runtime modules remain at the root. This preserves current PyInstaller collection, local imports and Windows launcher compatibility. Supporting files are grouped by purpose.
 
-~~~text
-VAW-ClipForge/
-├── clipforge_gui.py
-├── START_CLIPFORGE.cmd
-├── START_REVIEW_STUDIO.cmd
-├── runtime modules (*.py)
-├── tests/
-│   ├── qa_v12_*.py
-│   └── qa_v11_*.py
-├── docs/
-├── scripts/
-├── tools/legacy_patches/
-├── samples/       # Local-only media fixtures
-├── exports/       # Generated media
-├── models/        # Downloaded models
-├── url-cache/     # Download cache
-├── backups/       # Local recovery copies
-├── README.md
-└── .gitignore
-~~~
+    VAW-ClipForge/
+    |-- assets/                  Vanitas branding, fonts and font licenses
+    |-- docs/
+    |   |-- archive/releases/    Historical release notes
+    |   |-- VANITAS_BRAND_UI.md
+    |   |-- REVIEW_STUDIO.md
+    |   `-- ...
+    |-- scripts/                 Build, QA and optional provider setup
+    |-- tests/                   Regression and interaction tests
+    |-- tools/
+    |   |-- diagnostics/         Maintainer diagnostics
+    |   `-- legacy_patches/      Historical one-off migration scripts
+    |-- samples/                 Local-only QA media; not committed
+    |-- clipforge_gui.py         Main Windows application entry
+    |-- review_editor.py         Legacy clip review entry
+    |-- composition_review.py    Story Composer review entry
+    |-- vanitas_widgets.py       Shared custom Vanitas controls
+    |-- START_CLIPFORGE.cmd
+    |-- START_REVIEW_STUDIO.cmd
+    |-- README.md
+    `-- RELEASE_NOTES.md         Latest release only
 
-## Development
+## Development and QA
 
-Run the supported automated regression suite from the repository root:
+Run the supported Windows regression suite from the repository root:
 
-~~~powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\run_qa.ps1
-~~~
+    powershell -ExecutionPolicy Bypass -File .\scripts\run_qa.ps1
 
-The suite compiles the Python modules and runs the deterministic v1.2 contract, analyzer, composer, vision, rendering, Review Studio, title/hashtag and v1.1 regression tests.
+The suite compiles runtime modules and executes deterministic v1.2 feature tests, Vanitas control interaction tests, and v1.1 regression tests.
 
-Some historical QA scripts require local sample media, a configured Gemini key, network access or a visible desktop session. They remain available in tests/ but are not part of the default regression command.
+Some historical/manual QA scripts require local media fixtures, a configured Gemini key, network access or an interactive desktop session. Those scripts remain under tests/ but are not part of the default regression gate.
 
-## Historical patch scripts
+## Local-only data
 
-tools/legacy_patches/ contains one-off scripts used during earlier version migrations. They are retained for audit/history only. Do not run them against the current application unless a specific recovery procedure calls for it.
+Generated exports, source videos, Whisper models, URL caches, backups, build output, and local QA media must not be committed. The ignore rules enforce these boundaries.
 
 ## Runtime compatibility
 
-The runtime modules intentionally remain at the root for this cleanup pass. Moving them into a Python package would require a separate import/launcher migration and is not necessary to make the repository navigable.
+Application modules remain at the repository root for the current Windows single-file packaging workflow. A package-layout migration is a separate engineering change because it affects import resolution, PyInstaller collection, and the existing launchers.

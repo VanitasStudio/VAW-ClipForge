@@ -1,4 +1,4 @@
-# VAW ClipForge v1.2 — Vision-Aware Story Editing
+# VAW ClipForge v1.2.1 — Vision-Aware Story Editing
 
 VAW ClipForge v1.2 builds on the v1.1 local-first desktop editor. It keeps Standalone Highlights and adds two complete Story Composer outputs: Smart Compilation and Narrative Reconstruction. Both story strategies can be enabled together.
 
@@ -100,7 +100,7 @@ Run the supported regression suite:
 powershell -ExecutionPolicy Bypass -File .\scripts\run_qa.ps1
 ~~~
 
-See docs/REPOSITORY_STRUCTURE.md for the full layout.
+See docs/REPOSITORY_STRUCTURE.md for the full layout and RELEASE_NOTES.md for the latest changes. Historical release notes are archived under docs/archive/releases/.
 
 ## Privacy and safety
 
