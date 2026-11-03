@@ -1,0 +1,237 @@
+{
+  "version": "0.4",
+  "source": "D:\\YouTubeAutomation\\VAW-ClipForge\\samples\\spoken-test.mp4",
+  "created": "2026-11-03T19:02:20.629626",
+  "settings": {
+    "auto_reframe": true,
+    "scene_detection": true,
+    "auto_captions": true,
+    "burn": true,
+    "caption_style": "modern"
+  },
+  "clips": [
+    {
+      "start": 2,
+      "duration": 10,
+      "score": 90,
+      "output": "D:\\YouTubeAutomation\\VAW-ClipForge\\samples\\v04-qa\\spoken-test_v04_01_00002s.mp4",
+      "visual": {
+        "mode": "scene-aware-face-motion",
+        "scene_cuts": [],
+        "focus_samples": [
+          [
+            0.0,
+            218
+          ],
+          [
+            0.2,
+            218
+          ],
+          [
+            0.4,
+            218
+          ],
+          [
+            0.6,
+            218
+          ],
+          [
+            0.8,
+            204
+          ],
+          [
+            1.0,
+            210
+          ],
+          [
+            1.2,
+            212
+          ],
+          [
+            1.4,
+            214
+          ],
+          [
+            1.6,
+            216
+          ],
+          [
+            1.8,
+            218
+          ],
+          [
+            2.0,
+            218
+          ],
+          [
+            2.2,
+            218
+          ],
+          [
+            2.4,
+            204
+          ],
+          [
+            2.6,
+            218
+          ],
+          [
+            2.8,
+            218
+          ],
+          [
+            3.0,
+            204
+          ],
+          [
+            3.2,
+            188
+          ],
+          [
+            3.4,
+            174
+          ],
+          [
+            3.6,
+            158
+          ],
+          [
+            3.8,
+            174
+          ],
+          [
+            4.0,
+            188
+          ],
+          [
+            4.2,
+            204
+          ],
+          [
+            4.4,
+            208
+          ],
+          [
+            4.6,
+            198
+          ],
+          [
+            4.8,
+            182
+          ],
+          [
+            5.0,
+            198
+          ],
+          [
+            5.2,
+            212
+          ],
+          [
+            5.4,
+            198
+          ],
+          [
+            5.6,
+            212
+          ],
+          [
+            5.8,
+            214
+          ],
+          [
+            6.0,
+            216
+          ],
+          [
+            6.2,
+            230
+          ],
+          [
+            6.4,
+            246
+          ],
+          [
+            6.6,
+            260
+          ],
+          [
+            6.8,
+            276
+          ],
+          [
+            7.0,
+            290
+          ],
+          [
+            7.2,
+            276
+          ],
+          [
+            7.4,
+            260
+          ],
+          [
+            7.6,
+            276
+          ],
+          [
+            7.8,
+            290
+          ],
+          [
+            8.0,
+            278
+          ],
+          [
+            8.2,
+            266
+          ],
+          [
+            8.4,
+            256
+          ],
+          [
+            8.6,
+            270
+          ],
+          [
+            8.8,
+            286
+          ],
+          [
+            9.0,
+            296
+          ],
+          [
+            9.2,
+            282
+          ],
+          [
+            9.4,
+            266
+          ],
+          [
+            9.6,
+            266
+          ],
+          [
+            9.8,
+            252
+          ]
+        ],
+        "tracking_sources": {
+          "motion": 33,
+          "center": 17
+        }
+      },
+      "caption": {
+        "captions": 7,
+        "srt": "D:\\YouTubeAutomation\\VAW-ClipForge\\samples\\v04-qa\\spoken-test_v04_01_00002s.srt",
+        "ass": "D:\\YouTubeAutomation\\VAW-ClipForge\\samples\\v04-qa\\spoken-test_v04_01_00002s.ass",
+        "burned": true
+      },
+      "ok": true
+    }
+  ]
+}

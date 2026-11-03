@@ -1,0 +1,44 @@
+﻿# Local configuration and credentials
+.env
+.env.*
+!.env.example
+*.dpapi
+*gemini*key*
+secrets/
+credentials/
+
+# Generated media and caches
+exports/
+url-cache/
+models/
+bin/
+temp/
+tmp/
+*.mp4
+*.mov
+*.mkv
+*.webm
+*.wav
+*.mp3
+*.m4a
+*.srt
+*.ass
+*.vtt
+*.log
+
+# Backups and local state
+backups/
+*.bak
+*.bak-*
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini

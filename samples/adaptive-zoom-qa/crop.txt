@@ -1,0 +1,2 @@
+1.000 crop@track w 600; crop@track h 1066; crop@track x 60; crop@track y 107;
+2.000 crop@track w 720; crop@track h 1280; crop@track x 0; crop@track y 0;

@@ -1,0 +1,87 @@
+{
+  "clip": "D:\\YouTubeAutomation\\VAW-ClipForge\\samples\\review-v07-qa\\documentary-object.mp4",
+  "source": "C:\\Users\\aryow\\Downloads\\videoplayback.mp4",
+  "subtitles": [
+    {
+      "start": 0.0,
+      "end": 1.34,
+      "text": "dropped the medical world."
+    }
+  ],
+  "keyframes": [],
+  "caption_style": "karaoke",
+  "subject_tracks": [
+    {
+      "start": 0.12,
+      "end": 1.765,
+      "seed": [
+        0.4778,
+        0.5451
+      ],
+      "bbox": [
+        0.33333,
+        0.19608,
+        0.62222,
+        0.89412
+      ],
+      "points": [
+        {
+          "time": 0.12,
+          "center": 0.47734,
+          "confidence": 1.0
+        },
+        {
+          "time": 0.32,
+          "center": 0.47733,
+          "confidence": 0.998
+        },
+        {
+          "time": 0.52,
+          "center": 0.47603,
+          "confidence": 0.927
+        },
+        {
+          "time": 0.72,
+          "center": 0.47359,
+          "confidence": 0.874
+        },
+        {
+          "time": 0.92,
+          "center": 0.47064,
+          "confidence": 0.846
+        },
+        {
+          "time": 1.12,
+          "center": 0.46865,
+          "confidence": 0.815
+        },
+        {
+          "time": 1.32,
+          "center": 0.46584,
+          "confidence": 0.783
+        },
+        {
+          "time": 1.52,
+          "center": 0.46289,
+          "confidence": 0.756
+        },
+        {
+          "time": 1.72,
+          "center": 0.45782,
+          "confidence": 0.741
+        },
+        {
+          "time": 1.765,
+          "center": 0.45821,
+          "confidence": 0.8
+        }
+      ],
+      "method": "optical-flow+template-match",
+      "source_width": 640,
+      "object_type": "visual-region",
+      "original_center": 0.4773
+    }
+  ],
+  "transitions": {},
+  "saved_at": "2026-11-03T20:10:02"
+}

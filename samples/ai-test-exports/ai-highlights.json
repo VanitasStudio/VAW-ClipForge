@@ -1,0 +1,22 @@
+{
+  "tool": "VAW ClipForge",
+  "version": "v0.2",
+  "method": "Gemini audio ranking",
+  "source": "D:\\YouTubeAutomation\\VAW-ClipForge\\samples\\synthetic-demo.mp4",
+  "model": "gemini-flash-latest",
+  "created": "2026-11-03T16:37:15.970205",
+  "sections_analyzed": 1,
+  "clips": [
+    {
+      "start": 9.0,
+      "end": 24.0,
+      "score": 91,
+      "title": "Mock highlight",
+      "reason": "Integration test",
+      "duration": 10,
+      "audio_start": 4.0,
+      "audio_end": 24.0,
+      "path": "D:\\YouTubeAutomation\\VAW-ClipForge\\samples\\ai-test-exports\\synthetic-demo_ai_01_00009s.mp4"
+    }
+  ]
+}

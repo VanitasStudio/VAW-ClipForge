@@ -1,0 +1,31 @@
+{
+  "fingerprint": "('D:\\\\YouTubeAutomation\\\\VAW-ClipForge\\\\samples\\\\spoken-test.mp4', 1539770, 1793700390926093700, 'gemini-3.6-flash', 30, False, 'editorial-intelligence-v10')",
+  "successful_sections": {
+    "1": [
+      {
+        "start": 2.6,
+        "end": 14.0,
+        "score": 86,
+        "complete": true,
+        "title": "Why this workflow is useful",
+        "reason": "A complete explanation with a practical payoff.",
+        "hook": "A simple problem with a useful solution.",
+        "context": "The example demonstrates local file automation.",
+        "payoff": "Always inspect the output before posting.",
+        "hook_strength": 91,
+        "payoff_strength": 94,
+        "context_independence": 90,
+        "clarity": 92,
+        "visual_interest": 83,
+        "pacing": 88,
+        "novelty": 85,
+        "retention_potential": 90,
+        "visual_type": "animation",
+        "visual_notes": "The sampled frame shows a clear workflow diagram.",
+        "retention_risk": "none",
+        "retention_reason": "A concrete question is answered with a useful takeaway.",
+        "edit_suggestion": "Keep the diagram on screen until the final takeaway."
+      }
+    ]
+  }
+}

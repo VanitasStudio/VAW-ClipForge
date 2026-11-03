@@ -1,0 +1,34 @@
+{
+  "tool": "VAW ClipForge",
+  "version": "v0.2",
+  "method": "Gemini audio ranking",
+  "source": "D:\\YouTubeAutomation\\VAW-ClipForge\\samples\\spoken-test.mp4",
+  "model": "gemini-3.6-flash",
+  "created": "2026-11-03T17:08:42.014004",
+  "sections_analyzed": 2,
+  "sections_failed": [],
+  "clips": [
+    {
+      "start": 1.5,
+      "end": 7.0,
+      "score": 95,
+      "title": "verified test",
+      "reason": "mock",
+      "duration": 5,
+      "audio_start": 1.0,
+      "audio_end": 7.0,
+      "path": "D:\\YouTubeAutomation\\VAW-ClipForge\\samples\\qa-partial\\spoken-test_ai_01_00001s.mp4"
+    },
+    {
+      "start": 10.5,
+      "end": 16.0,
+      "score": 90,
+      "title": "retry test",
+      "reason": "mock",
+      "duration": 5,
+      "audio_start": 10.0,
+      "audio_end": 16.0,
+      "path": "D:\\YouTubeAutomation\\VAW-ClipForge\\samples\\qa-partial\\spoken-test_ai_02_00010s.mp4"
+    }
+  ]
+}
