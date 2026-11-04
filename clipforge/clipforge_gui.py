@@ -29,7 +29,7 @@ ROOT=Path(sys.executable).resolve().parent if getattr(sys,"frozen",False) else P
 ASSET_ROOT=BUNDLE_ROOT/"assets"
 C={"bg":"#05070B","card":"#101827","white":"#DCE6F5",
    "muted":"#8E9DB4","red":"#075BFF","blue":"#075BFF",
-   "orange":"#20BFFF","line":"#29364B","green":"#79CBA5",
+   "blue_hi":"#20BFFF","orange":"#20BFFF","line":"#29364B","green":"#79CBA5",
    "field":"#0B111C","raised":"#172235","hover":"#1C2B42"}
 
 def load_brand_fonts():
@@ -47,8 +47,8 @@ class ClipForge:
         load_brand_fonts()
         self.root=tk.Tk()
         self.root.title("VAW ClipForge | Vanitas Studio")
-        self.root.geometry("1180x900")
-        self.root.minsize(1040,720)
+        self.root.geometry("1240x920")
+        self.root.minsize(980,700)
         icon_path=ASSET_ROOT/"branding"/"vanitas.ico"
         if icon_path.is_file():
             try:self.root.iconbitmap(str(icon_path))
@@ -126,10 +126,25 @@ class ClipForge:
         brand.pack(side="left",anchor="center")
         tk.Label(brand,text="CLIPFORGE",bg=C["bg"],fg=C["white"],
                  font=("Quantico",21)).pack(anchor="w")
-        tk.Label(brand,text="VANITAS STUDIO",bg=C["bg"],fg=C["muted"],
+        tk.Label(brand,text="VANITAS STUDIO  /  CREATOR TOOLKIT",bg=C["bg"],fg=C["muted"],
                  font=("Archivo",8,"bold")).pack(anchor="w",pady=(0,1))
-        tk.Label(header,text="V1.2.1  /  EDITORIAL WORKSPACE",bg=C["bg"],fg=C["muted"],
-                 font=("Archivo",8,"bold")).pack(side="right",anchor="center")
+        meta=tk.Frame(header,bg=C["bg"])
+        meta.pack(side="right",anchor="center")
+        tk.Label(meta,text="PRODUCTION WORKSPACE",bg=C["raised"],fg=C["white"],
+                 font=("Archivo",8,"bold"),padx=11,pady=7).pack(side="right",padx=(8,0))
+        tk.Label(meta,text="9:16  •  LOCAL-FIRST  •  WINDOWS",bg=C["bg"],fg=C["muted"],
+                 font=("Archivo",8,"bold")).pack(side="right")
+
+        intro=tk.Frame(shell,bg=C["card"],highlightbackground=C["line"],highlightthickness=1)
+        intro.pack(fill="x",pady=(0,14))
+        intro_copy=tk.Frame(intro,bg=C["card"])
+        intro_copy.pack(side="left",fill="x",expand=True,padx=17,pady=12)
+        tk.Label(intro_copy,text="Turn long-form footage into ready-to-publish vertical content.",
+                 bg=C["card"],fg=C["white"],font=("Archivo",11,"bold"),anchor="w").pack(anchor="w")
+        tk.Label(intro_copy,text="Configure your source, editorial outputs and processing preferences below.",
+                 bg=C["card"],fg=C["muted"],font=("Archivo",9),anchor="w").pack(anchor="w",pady=(4,0))
+        tk.Label(intro,text="01  /  CONFIGURE",bg=C["card"],fg=C["blue_hi"],
+                 font=("Archivo",8,"bold")).pack(side="right",padx=18)
 
         # Scrollable settings; the primary action and activity log stay visible.
         scroll_area=tk.Frame(shell,bg=C["bg"])
@@ -153,16 +168,22 @@ class ClipForge:
         def section(title,subtitle):
             card=tk.Frame(content,bg=C["card"],highlightbackground=C["line"],
                           highlightthickness=1,bd=0)
-            card.pack(fill="x",pady=(0,11))
+            card.pack(fill="x",pady=(0,12))
             head=tk.Frame(card,bg=C["card"])
-            head.pack(fill="x",padx=17,pady=(12,2))
-            label(head,title,11,"white",True).pack(anchor="w")
+            head.pack(fill="x",padx=17,pady=(13,3))
+            accent=tk.Frame(head,bg=C["blue"],width=3,height=27)
+            accent.pack(side="left",fill="y",padx=(0,10))
+            heading=tk.Frame(head,bg=C["card"])
+            heading.pack(side="left",fill="x",expand=True)
+            label(heading,title,10,"white",True).pack(anchor="w")
+            if subtitle:
+                label(heading,subtitle,8,"muted").pack(anchor="w",pady=(2,0))
             body=tk.Frame(card,bg=C["card"])
-            body.pack(fill="x",padx=17,pady=(2,14))
+            body.pack(fill="x",padx=17,pady=(10,15))
             return body
 
         # 01  -  Source and destination.
-        source=section("SOURCE","")
+        source=section("SOURCE","Choose one video or a public URL, then set the export destination.")
         sourcebar=tk.Frame(source,bg=C["card"])
         sourcebar.pack(fill="x",pady=(0,8))
         label(sourcebar,"INPUT TYPE",9,"muted",True).pack(side="left",padx=(0,10))
@@ -185,7 +206,7 @@ class ClipForge:
         self.button(destrow,"Choose Folder",self.browse_out).pack(side="left",padx=(9,0))
 
         # 02  -  Output settings.
-        output=section("CLIP SETTINGS","")
+        output=section("CLIP SETTINGS","Define the vertical format and pacing for standalone highlights.")
         for col in range(4):
             output.grid_columnconfigure(col,weight=1)
         settings=[
@@ -207,7 +228,7 @@ class ClipForge:
             widget.pack(anchor="w",fill="x",ipady=3)
 
         # 02B  -  Output modes.
-        outputs=section("OUTPUTS","")
+        outputs=section("EDITORIAL OUTPUTS","Select one or combine multiple editorial deliverables in the same run.")
         for col in range(2):
             outputs.grid_columnconfigure(col,weight=1)
         output_checks=[
@@ -226,7 +247,7 @@ class ClipForge:
             textvariable=self.story_seconds,font=("Archivo",10)).pack(side="left")
 
         # 03  -  AI engine.
-        ai=section("AI ENGINE","")
+        ai=section("ANALYSIS ENGINE","Choose local offline analysis or Gemini-powered editorial intelligence.")
         ai.grid_columnconfigure(1,weight=1)
         label(ai,"DETECTION MODE",9,"muted",True).grid(row=0,column=0,sticky="w",pady=(0,6))
         label(ai,"GEMINI MODEL",9,"muted",True).grid(row=0,column=1,sticky="w",padx=(15,0),pady=(0,6))
@@ -249,7 +270,7 @@ class ClipForge:
         self.refresh_key_status()
 
         # 04  -  Intelligent processing.
-        smart=section("PROCESSING","")
+        smart=section("PROCESSING OPTIONS","Fine-tune visual analysis, speech handling and subject-aware framing.")
         smart.grid_columnconfigure(0,weight=1)
         smart.grid_columnconfigure(1,weight=1)
         checks=[
@@ -272,7 +293,7 @@ class ClipForge:
             values=["universal","people","motion","center"],width=16).pack(side="left")
 
         # 05  -  Captions.
-        captions=section("CAPTIONS","")
+        captions=section("CAPTION DESIGN","Choose the visual subtitle treatment applied to your exports.")
         caprow=tk.Frame(captions,bg=C["card"])
         caprow.pack(fill="x")
         label(caprow,"SUBTITLE MODE",9,"muted",True).pack(side="left",padx=(0,12))
@@ -295,8 +316,10 @@ class ClipForge:
         self.run_btn.pack(side="left")
         self.button(actions,"Production Queue",self.open_queue).pack(side="left",padx=(9,0))
         self.button(actions,"Open Exports",self.open_export).pack(side="left",padx=(9,0))
-        self.button(actions,"Review / Timeline",self.open_review).pack(side="left",padx=(8,0))
-        self.button(actions,"Editorial Report",self.open_editorial_report).pack(side="left",padx=(8,0))
+        tools=tk.Frame(actions,bg=C["bg"])
+        tools.pack(side="right")
+        self.button(tools,"Review Studio",self.open_review).pack(side="left",padx=(8,0))
+        self.button(tools,"Editorial Report",self.open_editorial_report).pack(side="left",padx=(8,0))
         logcard=tk.Frame(footer,bg=C["card"],highlightbackground=C["line"],
                          highlightthickness=1,bd=0)
         logcard.pack(fill="x")
@@ -764,13 +787,20 @@ class ClipForge:
         header.pack(fill="x",pady=(0,14))
         tk.Label(header,text="PRODUCTION QUEUE",bg=C["bg"],fg=C["white"],
             font=("Quantico",18)).pack(anchor="w")
-        tk.Label(header,text="BATCH PRODUCTION  /  SEQUENTIAL LOCAL WORKER",
-            bg=C["bg"],fg=C["muted"],font=("Archivo",8,"bold")).pack(anchor="w",pady=(2,0))
-        stats=tk.Frame(shell,bg=C["card"],highlightbackground=C["line"],highlightthickness=1)
+        tk.Label(header,text="BATCH PRODUCTION  /  ONE WORKER  /  AUTOMATIC RECOVERY",
+            bg=C["bg"],fg=C["muted"],font=("Archivo",8,"bold")).pack(anchor="w",pady=(3,0))
+        stats=tk.Frame(shell,bg=C["bg"])
         stats.pack(fill="x",pady=(0,12))
-        self.queue_stats=tk.Label(stats,text="",bg=C["card"],fg=C["white"],
-            font=("Archivo",10,"bold"),anchor="w")
-        self.queue_stats.pack(fill="x",padx=14,pady=11)
+        self.queue_stat_labels={}
+        for column,(key,title) in enumerate((("total","TOTAL JOBS"),("queued","QUEUED"),
+                ("processing","PROCESSING"),("completed","COMPLETED"),("failed","FAILED"),("cancelled","CANCELLED"))):
+            stats.grid_columnconfigure(column,weight=1,uniform="queue-stats")
+            tile=tk.Frame(stats,bg=C["card"],highlightbackground=C["line"],highlightthickness=1)
+            tile.grid(row=0,column=column,sticky="nsew",padx=(0 if column==0 else 6,0))
+            value=tk.Label(tile,text="0",bg=C["card"],fg=C["white"],font=("Quantico",17),anchor="w")
+            value.pack(anchor="w",padx=11,pady=(8,0))
+            tk.Label(tile,text=title,bg=C["card"],fg=C["muted"],font=("Archivo",7,"bold"),anchor="w").pack(anchor="w",padx=11,pady=(0,8))
+            self.queue_stat_labels[key]=value
         list_card=tk.Frame(shell,bg=C["card"],highlightbackground=C["line"],highlightthickness=1)
         list_card.pack(fill="both",expand=True)
         list_head=tk.Frame(list_card,bg=C["card"])
@@ -827,11 +857,11 @@ class ClipForge:
         jobs=self.queue_manager.list_jobs()
         counts={status.value:sum(job.status.value==status.value for job in jobs)
                 for status in __import__("clipforge.production_queue.models",fromlist=["JobStatus"]).JobStatus}
-        self.queue_stats.configure(text=(
-            f"TOTAL  {len(jobs):02d}     QUEUED  {counts['queued']:02d}     "
-            f"PROCESSING  {counts['processing']:02d}     COMPLETED  {counts['completed']:02d}     "
-            f"FAILED  {counts['failed']:02d}     CANCELLED  {counts['cancelled']:02d}"
-        ))
+        counts["total"]=len(jobs)
+        for key,value in counts.items():
+            if key in getattr(self,"queue_stat_labels",{}):
+                color={"processing":C["blue_hi"],"completed":C["green"],"failed":"#FF8A8A"}.get(key,C["white"])
+                self.queue_stat_labels[key].configure(text=f"{value:02d}",fg=color)
         selected=self.queue_list.curselection()
         selected_id=self.queue_job_ids[selected[0]] if selected and hasattr(self,"queue_job_ids") and selected[0]<len(self.queue_job_ids) else None
         self.queue_list.delete(0,"end")
