@@ -20,6 +20,8 @@ from clipforge.gemini_connection import test_gemini_connection
 from clipforge.smart_reframe import export_v04
 from clipforge.url_source import (validate_url,check_link,fetch_video,clear_cache,cache_stats)
 from clipforge.subtitle_presets import PRESETS, preview_image
+from clipforge.production_queue import QueueManager, QueueScheduler, QueueStore
+from clipforge.production_queue.runner import run_job
 from PIL import ImageTk
 
 BUNDLE_ROOT=Path(getattr(sys,"_MEIPASS",Path(__file__).resolve().parent.parent))
@@ -82,6 +84,16 @@ class ClipForge:
         self.busy=False
         self.last_export=None
         self.messages=queue.Queue()
+        app_data=Path(os.environ.get("LOCALAPPDATA",Path.home()/"AppData"/"Local"))
+        queue_db=app_data/"VanitasStudio"/"VAWClipForge"/"production_queue.sqlite3"
+        self.queue_manager=QueueManager(QueueStore(queue_db),default_exports,
+            on_event=lambda event:self.messages.put(("queue_event",event)))
+        self.queue_scheduler=QueueScheduler(self.queue_manager,
+            lambda job,progress:run_job(job,progress,
+                log=lambda msg:self.messages.put(("log",f"[{job.source_name}] {msg}"))),
+            on_event=lambda event:self.messages.put(("queue_event",event)))
+        self.queue_window=None
+        self._queue_refresh_id=None
         self.create_ui()
         self._poll_after_id=self.root.after(200,self.poll)
         self.root.protocol("WM_DELETE_WINDOW",self.close)
@@ -281,6 +293,7 @@ class ClipForge:
         actions.pack(fill="x",pady=(0,8))
         self.run_btn=self.button(actions,"GENERATE CLIPS",self.start,True)
         self.run_btn.pack(side="left")
+        self.button(actions,"Production Queue",self.open_queue).pack(side="left",padx=(9,0))
         self.button(actions,"Open Exports",self.open_export).pack(side="left",padx=(9,0))
         self.button(actions,"Review / Timeline",self.open_review).pack(side="left",padx=(8,0))
         self.button(actions,"Editorial Report",self.open_editorial_report).pack(side="left",padx=(8,0))
@@ -448,6 +461,9 @@ class ClipForge:
         self.logview.see("end")
     def start(self):
         if self.busy:return
+        if self.queue_scheduler.current_job_id or any(job.status.value in {"queued","processing"} for job in self.queue_manager.list_jobs()):
+            messagebox.showwarning("Production Queue active","Finish or pause the batch queue before starting a separate single-video job. This keeps heavy processing sequential.")
+            return
         raw=self.src.get().strip()
         from_url=(self.source_type.get()=="Video URL" or raw.startswith("https://"))
         if from_url:
@@ -713,6 +729,263 @@ class ClipForge:
                 self.messages.put(("error",str(exc)[:900]))
         threading.Thread(target=work,daemon=True).start()
 
+    def _queue_config_snapshot(self):
+        return {
+            "ai": self.mode.get().startswith("Gemini"),
+            "visual": bool(self.visual.get()),
+            "video_vision": bool(self.video_vision.get()),
+            "standalone": bool(self.standalone_output.get()),
+            "smart_compilation": bool(self.smart_compilation_output.get()),
+            "narrative_reconstruction": bool(self.narrative_output.get()),
+            "count": int(self.count.get()), "seconds": int(self.seconds.get()),
+            "story_seconds": int(self.story_seconds.get()),
+            "resolution": self.resolution.get(), "layout": self.layout.get(),
+            "model": self.model.get().strip(), "captions": bool(self.caption.get()),
+            "burn": bool(self.burn.get()), "context_duration": bool(self.context_duration.get()),
+            "subject_mode": self.subject_mode.get(), "autoframe": bool(self.autoframe.get()),
+            "scenedetect": bool(self.scenedetect.get()), "caption_style": self.caption_style.get(),
+        }
+
+    def open_queue(self):
+        if self.queue_window and self.queue_window.winfo_exists():
+            self.queue_window.lift()
+            self.refresh_queue_window()
+            return
+        window=tk.Toplevel(self.root)
+        self.queue_window=window
+        window.title("VAW ClipForge | Production Queue")
+        window.geometry("940x650")
+        window.minsize(760,500)
+        window.configure(bg=C["bg"])
+        window.protocol("WM_DELETE_WINDOW",self._close_queue_window)
+        shell=tk.Frame(window,bg=C["bg"])
+        shell.pack(fill="both",expand=True,padx=22,pady=18)
+        header=tk.Frame(shell,bg=C["bg"])
+        header.pack(fill="x",pady=(0,14))
+        tk.Label(header,text="PRODUCTION QUEUE",bg=C["bg"],fg=C["white"],
+            font=("Quantico",18)).pack(anchor="w")
+        tk.Label(header,text="BATCH PRODUCTION  /  SEQUENTIAL LOCAL WORKER",
+            bg=C["bg"],fg=C["muted"],font=("Archivo",8,"bold")).pack(anchor="w",pady=(2,0))
+        stats=tk.Frame(shell,bg=C["card"],highlightbackground=C["line"],highlightthickness=1)
+        stats.pack(fill="x",pady=(0,12))
+        self.queue_stats=tk.Label(stats,text="",bg=C["card"],fg=C["white"],
+            font=("Archivo",10,"bold"),anchor="w")
+        self.queue_stats.pack(fill="x",padx=14,pady=11)
+        list_card=tk.Frame(shell,bg=C["card"],highlightbackground=C["line"],highlightthickness=1)
+        list_card.pack(fill="both",expand=True)
+        list_head=tk.Frame(list_card,bg=C["card"])
+        list_head.pack(fill="x",padx=12,pady=(10,5))
+        tk.Label(list_head,text="JOBS",bg=C["card"],fg=C["muted"],
+            font=("Archivo",9,"bold")).pack(side="left")
+        self.queue_list=tk.Listbox(list_card,bg=C["field"],fg=C["white"],
+            selectbackground=C["blue"],selectforeground="#FFFFFF",
+            font=("Archivo",9),relief="flat",highlightthickness=0,
+            activestyle="none",height=16)
+        self.queue_list.pack(side="left",fill="both",expand=True,padx=(10,0),pady=(0,10))
+        queue_scroll=VanitasScrollbar(list_card,orient="vertical",command=self.queue_list.yview)
+        queue_scroll.pack(side="right",fill="y",padx=(0,10),pady=(0,10))
+        self.queue_list.configure(yscrollcommand=queue_scroll.set)
+        self.queue_list.bind("<Double-Button-1>",self.show_selected_job)
+        actions=tk.Frame(shell,bg=C["bg"])
+        actions.pack(fill="x",pady=(12,0))
+        primary_actions=tk.Frame(actions,bg=C["bg"])
+        primary_actions.pack(fill="x")
+        secondary_actions=tk.Frame(actions,bg=C["bg"])
+        secondary_actions.pack(fill="x",pady=(7,0))
+        self.button(primary_actions,"ADD VIDEOS",self.add_videos_to_queue,True).pack(side="left")
+        self.button(primary_actions,"START QUEUE",self.start_queue).pack(side="left",padx=(7,0))
+        self.button(primary_actions,"PAUSE AFTER CURRENT",self.pause_queue).pack(side="left",padx=(7,0))
+        self.button(primary_actions,"RESUME",self.resume_queue).pack(side="left",padx=(7,0))
+        self.button(secondary_actions,"CONFIGURE SELECTED",self.configure_selected_job).pack(side="left")
+        self.button(secondary_actions,"RETRY FAILED",self.retry_selected_job).pack(side="left",padx=(7,0))
+        self.button(secondary_actions,"REMOVE PENDING",self.remove_selected_job).pack(side="left",padx=(7,0))
+        self.refresh_queue_window()
+        self._schedule_queue_refresh()
+
+    def _close_queue_window(self):
+        if self._queue_refresh_id:
+            try:self.root.after_cancel(self._queue_refresh_id)
+            except tk.TclError:pass
+            self._queue_refresh_id=None
+        if self.queue_window:
+            self.queue_window.destroy()
+        self.queue_window=None
+
+    def _schedule_queue_refresh(self):
+        if self.queue_window and self.queue_window.winfo_exists():
+            self._queue_refresh_id=self.root.after(1000,self._queue_refresh_tick)
+
+    def _queue_refresh_tick(self):
+        self._queue_refresh_id=None
+        if self.queue_window and self.queue_window.winfo_exists():
+            self.refresh_queue_window()
+            self._schedule_queue_refresh()
+
+    def refresh_queue_window(self):
+        if not (self.queue_window and self.queue_window.winfo_exists()):
+            return
+        jobs=self.queue_manager.list_jobs()
+        counts={status.value:sum(job.status.value==status.value for job in jobs)
+                for status in __import__("clipforge.production_queue.models",fromlist=["JobStatus"]).JobStatus}
+        self.queue_stats.configure(text=(
+            f"TOTAL  {len(jobs):02d}     QUEUED  {counts['queued']:02d}     "
+            f"PROCESSING  {counts['processing']:02d}     COMPLETED  {counts['completed']:02d}     "
+            f"FAILED  {counts['failed']:02d}     CANCELLED  {counts['cancelled']:02d}"
+        ))
+        selected=self.queue_list.curselection()
+        selected_id=self.queue_job_ids[selected[0]] if selected and hasattr(self,"queue_job_ids") and selected[0]<len(self.queue_job_ids) else None
+        self.queue_list.delete(0,"end")
+        self.queue_job_ids=[]
+        for job in jobs:
+            stage=job.current_stage or "Waiting"
+            percent=f"{job.progress:.0f}%" if job.status.value=="processing" and job.progress>0 else ""
+            retry=f"  /  retry {job.retry_count}" if job.retry_count else ""
+            line=f"{job.source_name}   |   {job.status.value.upper()}   |   {stage}   {percent}{retry}"
+            self.queue_job_ids.append(job.job_id)
+            self.queue_list.insert("end",line)
+            if job.status.value=="failed":
+                self.queue_list.itemconfigure("end",fg="#FF8A8A")
+            elif job.status.value=="completed":
+                self.queue_list.itemconfigure("end",fg=C["green"])
+            elif job.status.value=="processing":
+                self.queue_list.itemconfigure("end",fg="#20BFFF")
+        if selected_id in self.queue_job_ids:
+            index=self.queue_job_ids.index(selected_id)
+            self.queue_list.selection_set(index)
+            self.queue_list.see(index)
+
+    def add_videos_to_queue(self):
+        paths=filedialog.askopenfilenames(title="Add source videos to production queue",
+            filetypes=[("Video files","*.mp4 *.mov *.mkv *.avi *.webm *.m4v"),("All files","*.*")])
+        if not paths:return
+        try:
+            config=self._queue_config_snapshot()
+        except (ValueError,tk.TclError) as exc:
+            messagebox.showerror("Invalid production settings",str(exc));return
+        if not (config["standalone"] or config["smart_compilation"] or config["narrative_reconstruction"]):
+            messagebox.showwarning("Choose an output","Enable at least one output mode before adding videos.");return
+        if (config["smart_compilation"] or config["narrative_reconstruction"]) and not config["ai"]:
+            messagebox.showwarning("Gemini required","Story Composer needs Gemini AI editorial analysis.");return
+        if config["ai"] and not has_key():
+            messagebox.showwarning("API key needed","Configure the Gemini API key before adding this batch.");return
+        if config["ai"]:
+            consent=("This batch sends compressed audio and optional sparse timestamped frames to Gemini for editorial analysis. "
+                "Original source video and full transcript are not uploaded. Local Whisper remains on this PC. "
+                "API quota/cost may apply. Continue?")
+            if not messagebox.askyesno("Gemini batch processing consent",consent):return
+        destination=self.dest.get().strip()
+        if not destination:
+            messagebox.showwarning("Export location required","Choose an export folder before adding videos.");return
+        try:
+            self.queue_manager.output_root=Path(destination).expanduser().resolve()
+            self.queue_manager.output_root.mkdir(parents=True,exist_ok=True)
+            added=self.queue_manager.add_sources(paths,"creator-default",config)
+        except Exception as exc:
+            messagebox.showerror("Queue import failed",str(exc));return
+        self.log(f"Added {len(added)} video(s) to Production Queue.")
+        self.refresh_queue_window()
+
+    def start_queue(self):
+        if self.busy:
+            messagebox.showwarning("Single-video production active","Wait for the current single-video job to finish before starting the batch queue.")
+            return
+        if not any(job.status.value=="queued" for job in self.queue_manager.list_jobs()):
+            messagebox.showinfo("Production Queue","There are no queued jobs to process.");return
+        self.queue_scheduler.start()
+        self.queue_scheduler.notify_new_jobs()
+        self.log("Production Queue started with one sequential worker.")
+
+    def pause_queue(self):
+        self.queue_scheduler.pause_after_current()
+
+    def resume_queue(self):
+        self.queue_scheduler.resume()
+
+    def _selected_queue_job(self):
+        selected=self.queue_list.curselection() if hasattr(self,"queue_list") else ()
+        if not selected:return None
+        index=selected[0]
+        if index>=len(getattr(self,"queue_job_ids",[])):return None
+        return next((job for job in self.queue_manager.list_jobs()
+                     if job.job_id==self.queue_job_ids[index]),None)
+
+    def retry_selected_job(self):
+        job=self._selected_queue_job()
+        if not job:
+            messagebox.showinfo("Production Queue","Select a failed job first.");return
+        try:self.queue_manager.retry(job.job_id)
+        except Exception as exc:messagebox.showwarning("Retry unavailable",str(exc));return
+        self.refresh_queue_window()
+
+    def remove_selected_job(self):
+        job=self._selected_queue_job()
+        if not job:
+            messagebox.showinfo("Production Queue","Select a pending job first.");return
+        try:self.queue_manager.remove_pending(job.job_id)
+        except Exception as exc:messagebox.showwarning("Remove unavailable",str(exc));return
+        self.refresh_queue_window()
+
+    def show_selected_job(self,_event=None):
+        job=self._selected_queue_job()
+        if not job:return
+        details=(f"Source: {job.source_path}\\nStatus: {job.status.value}\\n"
+            f"Stage: {job.current_stage or '-'}\\nOutput: {job.output_directory}\\n"
+            f"Preset: {job.preset_id}\\nRetries: {job.retry_count}\\n"
+            f"Error: {job.error or '-'}")
+        messagebox.showinfo("Production Job Details",details)
+
+    def configure_selected_job(self):
+        job=self._selected_queue_job()
+        if not job:
+            messagebox.showinfo("Production Queue","Select a queued job to configure.");return
+        if job.status.value!="queued":
+            messagebox.showwarning("Configuration locked","Only queued jobs can be configured.");return
+        cfg=job.config_snapshot
+        dialog=tk.Toplevel(self.queue_window)
+        dialog.title("Configure Production Job")
+        dialog.configure(bg=C["bg"])
+        dialog.transient(self.queue_window)
+        dialog.grab_set()
+        body=tk.Frame(dialog,bg=C["card"],highlightbackground=C["line"],highlightthickness=1)
+        body.pack(fill="both",expand=True,padx=16,pady=16)
+        tk.Label(body,text=job.source_name,bg=C["card"],fg=C["white"],
+            font=("Archivo",11,"bold")).grid(row=0,column=0,columnspan=2,sticky="w",padx=14,pady=(14,10))
+        resolution=tk.StringVar(value=cfg.get("resolution","1080p"))
+        count=tk.IntVar(value=cfg.get("count",3))
+        seconds=tk.IntVar(value=cfg.get("seconds",30))
+        story_seconds=tk.IntVar(value=cfg.get("story_seconds",60))
+        captions=tk.BooleanVar(value=cfg.get("captions",True))
+        standalone=tk.BooleanVar(value=cfg.get("standalone",True))
+        smart=tk.BooleanVar(value=cfg.get("smart_compilation",False))
+        narrative=tk.BooleanVar(value=cfg.get("narrative_reconstruction",False))
+        fields=[("Resolution",VanitasCombo(body,textvariable=resolution,state="readonly",values=["1080p","720p"],width=12)),
+                ("Highlight count",VanitasSpinbox(body,from_=1,to=20,textvariable=count,width=10)),
+                ("Highlight target (sec)",VanitasSpinbox(body,from_=5,to=180,textvariable=seconds,width=10)),
+                ("Story target (sec)",VanitasSpinbox(body,from_=12,to=180,textvariable=story_seconds,width=10))]
+        for row,(name,widget) in enumerate(fields,1):
+            tk.Label(body,text=name,bg=C["card"],fg=C["muted"],font=("Archivo",9)).grid(row=row,column=0,sticky="w",padx=14,pady=5)
+            widget.grid(row=row,column=1,sticky="e",padx=14,pady=5)
+        checks=tk.Frame(body,bg=C["card"])
+        checks.grid(row=5,column=0,columnspan=2,sticky="w",padx=14,pady=8)
+        for variable,label_text in [(standalone,"Standalone Highlights"),(smart,"Smart Compilation"),(narrative,"Narrative Reconstruction"),(captions,"Automatic captions")]:
+            VanitasCheckbutton(checks,text=label_text,variable=variable,bg=C["card"],font=("Archivo",9)).pack(anchor="w",pady=2)
+        def save_override():
+            if not (standalone.get() or smart.get() or narrative.get()):
+                messagebox.showwarning("Choose an output","At least one output mode is required.",parent=dialog);return
+            if (smart.get() or narrative.get()) and not cfg.get("ai",False):
+                messagebox.showwarning("Gemini required","Story Composer requires Gemini AI.",parent=dialog);return
+            try:
+                self.queue_manager.update_config(job.job_id,{
+                    "resolution":resolution.get(),"count":int(count.get()),"seconds":int(seconds.get()),
+                    "story_seconds":int(story_seconds.get()),"captions":captions.get(),
+                    "standalone":standalone.get(),"smart_compilation":smart.get(),
+                    "narrative_reconstruction":narrative.get()})
+            except Exception as exc:
+                messagebox.showerror("Configuration failed",str(exc),parent=dialog);return
+            dialog.destroy()
+            self.refresh_queue_window()
+        self.button(body,"SAVE JOB OVERRIDE",save_override,True).grid(row=6,column=0,columnspan=2,padx=14,pady=(8,14),sticky="ew")
+
     def poll(self):
         try:
             while True:
@@ -733,6 +1006,11 @@ class ClipForge:
                     messagebox.showwarning("URL check failed",msg)
                 elif kind=="set_export":
                     self.last_export=Path(msg)
+                elif kind=="queue_event":
+                    event=msg
+                    self.log(f"[Queue] {event.get('message','')}")
+                    if self.queue_window and self.queue_window.winfo_exists():
+                        self.refresh_queue_window()
                 else:
                     self.busy=False;self.run_btn.configure(state="normal")
                     self.log(msg)
@@ -743,6 +1021,18 @@ class ClipForge:
         self._poll_after_id=self.root.after(200,self.poll)
 
     def close(self):
+        if self.queue_scheduler.current_job_id:
+            messagebox.showwarning(
+                "Production still running",
+                "ClipForge will not close while a production job is active. Use PAUSE AFTER CURRENT, wait for the active job to finish, then close safely."
+            )
+            return
+        self.queue_scheduler.shutdown(wait=True,timeout=3)
+        after_id=getattr(self,"_queue_refresh_id",None)
+        if after_id:
+            try:self.root.after_cancel(after_id)
+            except tk.TclError:pass
+            self._queue_refresh_id=None
         after_id=getattr(self,"_poll_after_id",None)
         if after_id:
             try:self.root.after_cancel(after_id)
