@@ -1,8 +1,4 @@
-"""ClipForge v0.6 selectable caption presets and live thumbnail samples.
-
-ASS rendering uses explicit 720x1280 layout, safe word animation and original captions.
-No external fonts; Segoe UI and Arial shipped with Windows.
-"""
+"""ClipForge caption presets with resolution-aware, measured safe-area layout."""
 from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
@@ -33,9 +29,13 @@ PRESETS=[
     Preset("creator","Creator","Bright orange accents","Segoe UI Semibold",51,"#FFFFFF","#FFB453","#0B0F17",4,1,1075,True),
     Preset("all_caps","All Capital Subtitle","Full uppercase with bold word highlight","Arial",57,"#FFFFFF","#FFF357","#08090A",5,2,1060,True,True),
 ]
-ALIASES={"modern":"karaoke","clean":"minimal",
-         "all capital":"all_caps","all capital subtitle":"all_caps"}
+ALIASES={"modern":"karaoke","clean":"minimal","all capital":"all_caps","all capital subtitle":"all_caps"}
 BY_ID={p.id:p for p in PRESETS}
+LAYOUT_WIDTH=720
+LAYOUT_HEIGHT=1280
+SAFE_TEXT_WIDTH=610
+MIN_FONT_SIZE=14
+MAX_LINES=2
 
 def choose(name):
     return BY_ID.get(ALIASES.get(name,name),BY_ID["karaoke"])
@@ -54,13 +54,55 @@ def ass_stamp(t):
 def escape(text):
     return text.replace("\\","").replace("{","(").replace("}",")").replace("\n"," ")
 
+def _font_path(name):
+    candidates=(
+        ["C:/Windows/Fonts/arialbd.ttf"] if "Arial" in name else
+        ["C:/Windows/Fonts/segoeuib.ttf","C:/Windows/Fonts/arialbd.ttf"]
+    )
+    return next((Path(item) for item in candidates if Path(item).is_file()),None)
+
+def _measure(text,font_size,preset):
+    path=_font_path(preset.font)
+    try:
+        font=ImageFont.truetype(str(path),font_size) if path else ImageFont.load_default()
+        return float(font.getlength(text))
+    except (OSError,AttributeError):
+        return len(text)*font_size*0.58
+
+def _wrap_at_size(tokens,font_size,preset):
+    lines=[]
+    current=""
+    for token in tokens:
+        candidate=(current+" "+token).strip()
+        if current and _measure(candidate,font_size,preset)>SAFE_TEXT_WIDTH:
+            lines.append(current)
+            current=token
+        else:
+            current=candidate
+    if current:
+        lines.append(current)
+    return lines
+
+def layout_caption(tokens,preset):
+    """Greedy font-metric wrapping; shrink long copy before allowing overflow."""
+    size=int(preset.fontsize)
+    lines=_wrap_at_size(tokens,size,preset)
+    while (len(lines)>MAX_LINES or any(_measure(token,size,preset)>SAFE_TEXT_WIDTH for token in tokens)) and size>MIN_FONT_SIZE:
+        size=max(MIN_FONT_SIZE,size-2)
+        lines=_wrap_at_size(tokens,size,preset)
+    # Preserve every word even for unusually long transcripts. Three compact
+    # lines are preferable to text extending beyond the portrait safe area.
+    return lines,size
+
 def break_lines(words):
-    """Stable word wrap across all highlighted events."""
-    text=" ".join(words)
-    if len(text)<=25:
-        return list(words)
-    split=min(range(1,len(words)),key=lambda i:abs(len(" ".join(words[:i]))-len(" ".join(words[i:]))))
-    return words[:split]+[r"\N"]+words[split:]
+    """Compatibility helper returning measured line breaks as ASS tokens."""
+    lines,_=layout_caption(list(words),BY_ID["karaoke"])
+    result=[]
+    for index,line in enumerate(lines):
+        if index:
+            result.append(r"\N")
+        result.extend(line.split())
+    return result
 
 def caption_ass(rows,mode="karaoke"):
     preset=choose(mode)
@@ -84,9 +126,16 @@ def caption_ass(rows,mode="karaoke"):
         tokens=text.split()
         if not tokens or end<=start:continue
         if preset.uppercase:tokens=[word.upper() for word in tokens]
-        wrapped=break_lines(tokens)
+        lines,font_size=layout_caption(tokens,preset)
+        wrapped=[]
+        for line_index,line in enumerate(lines):
+            if line_index:
+                wrapped.append(r"\N")
+            wrapped.extend(line.split())
         indices=[i for i,token in enumerate(wrapped) if token!=r"\N"]
         baseprefix=rf"{{\an2\pos(360,{preset.baseline})}}"
+        if font_size!=preset.fontsize:
+            baseprefix+=rf"{{\fs{font_size}}}"
         n=len(indices)
         word_spans=row.get("word_spans",[])
         for j in range(n if preset.animated else 1):
@@ -131,5 +180,4 @@ def preview_image(mode,width=240,height=140,selected=False):
         draw.text((xpos,78),token,font=font,fill=preset.accent if idx==2 else preset.white,
                   stroke_width=2 if preset.outline>=4 else 1,stroke_fill=preset.stroke)
         xpos+=sizes[idx]+spacing
-    font2=next((ImageFont.truetype(path,12) for path in ["C:/Windows/Fonts/segoeui.ttf"] if Path(path).exists()),ImageFont.load_default())
     return image
