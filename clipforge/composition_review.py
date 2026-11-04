@@ -114,8 +114,8 @@ class CompositionReview:
 
         self.root = tk.Tk()
         self.root.title("VAW ClipForge — Composition Review Studio")
-        self.root.geometry("1180x850")
-        self.root.minsize(1020, 760)
+        self.root.geometry("1320x900")
+        self.root.minsize(1040, 720)
         self.root.configure(bg="#05070B")
         self.selected = 0
         self.caption_span_id = None
@@ -142,16 +142,21 @@ class CompositionReview:
     def _build_ui(self):
         bg, card, white, muted = "#05070B", "#101827", "#DCE6F5", "#8793A3"
         header = tk.Frame(self.root, bg=bg)
-        header.pack(fill="x", padx=20, pady=(16, 8))
-        tk.Label(
-            header, text=self.edl.title, bg=bg, fg=white,
-            font=("Archivo", 20),
-        ).pack(side="left")
-        tk.Label(
-            header, text=f"{self.edl.strategy.value.replace('_', ' ').title()}",
-            bg="#172235", fg="#DCE6F5", padx=10, pady=5,
-            font=("Archivo", 9),
-        ).pack(side="right")
+        header.pack(fill="x", padx=22, pady=(16, 10))
+        identity=tk.Frame(header,bg=bg)
+        identity.pack(side="left",fill="x",expand=True)
+        tk.Label(identity,text="VANITAS STUDIO  /  STORY COMPOSER",bg=bg,fg="#8E9DB4",
+                 font=("Archivo",8,"bold")).pack(anchor="w")
+        tk.Label(identity,text=self.edl.title,bg=bg,fg=white,
+                 font=("Archivo",19,"bold")).pack(anchor="w",pady=(2,0))
+        meta=tk.Frame(header,bg=bg)
+        meta.pack(side="right",anchor="center")
+        tk.Label(meta,text=f"{len(self.edl.segments):02d} SEGMENTS",bg="#101827",fg="#DCE6F5",
+                 padx=11,pady=7,font=("Archivo",8,"bold")).pack(side="right",padx=(8,0))
+        tk.Label(meta,text=f"{self.edl.duration_seconds:.1f}s",bg="#101827",fg="#20BFFF",
+                 padx=11,pady=7,font=("Quantico",10)).pack(side="right",padx=(8,0))
+        tk.Label(meta,text=self.edl.strategy.value.replace("_"," ").upper(),bg="#172235",fg="#DCE6F5",
+                 padx=11,pady=7,font=("Archivo",8,"bold")).pack(side="right")
 
         body = tk.Frame(self.root, bg=bg)
         body.pack(fill="both", expand=True, padx=20, pady=8)
@@ -160,8 +165,8 @@ class CompositionReview:
         right = tk.Frame(body, bg=card, highlightbackground="#29364B", highlightthickness=1)
         right.pack(side="right", fill="y", padx=(10, 0))
 
-        tk.Label(left, text="COMPOSITION TIMELINE", bg=card, fg=muted,
-                 font=("Archivo", 9)).pack(anchor="w", padx=14, pady=(12, 6))
+        tk.Label(left, text="01  /  COMPOSITION TIMELINE", bg=card, fg=muted,
+                 font=("Archivo", 9,"bold")).pack(anchor="w", padx=14, pady=(14, 7))
         self.timeline_canvas=tk.Canvas(left,height=96,bg="#0B111C",highlightthickness=0)
         self.timeline_canvas.pack(fill="x",padx=12,pady=(0,8))
         self.timeline_canvas.bind("<Button-1>",self._timeline_click)
@@ -180,12 +185,12 @@ class CompositionReview:
         self._button(buttons, "Move Down", lambda: self._move(1)).pack(side="left", padx=7)
         self._button(buttons, "Apply Segment", self._apply_segment).pack(side="right")
 
-        tk.Label(right, text="SOURCE PREVIEW", bg=card, fg=muted,
-                 font=("Archivo", 9)).pack(anchor="w", padx=16, pady=(12, 5))
+        tk.Label(right, text="02  /  SOURCE PREVIEW", bg=card, fg=muted,
+                 font=("Archivo", 9,"bold")).pack(anchor="w", padx=16, pady=(14, 7))
         self.preview_label=tk.Label(right,bg="#0B111C",fg=muted,text="Select a segment")
         self.preview_label.pack(fill="x",padx=16,pady=(0,10))
-        tk.Label(right, text="SEGMENT DETAILS", bg=card, fg=white,
-                 font=("Archivo", 11)).pack(anchor="w", padx=16, pady=(4, 8))
+        tk.Label(right, text="03  /  SEGMENT DETAILS", bg=card, fg=white,
+                 font=("Archivo", 10,"bold")).pack(anchor="w", padx=16, pady=(5, 9))
         self._field(right, "Source In (seconds)", self.start_var)
         self._field(right, "Source Out (seconds)", self.end_var)
         tk.Label(right, text="Segment Role", bg=card, fg=muted,
@@ -201,8 +206,8 @@ class CompositionReview:
             values=["hard_cut","cross_dissolve"],
         )
         self.transition_combo.pack(fill="x",padx=16)
-        tk.Label(right,text="CAPTIONS IN THIS SEGMENT",bg=card,fg=muted,
-                 font=("Archivo",9)).pack(anchor="w",padx=16,pady=(15,4))
+        tk.Label(right,text="04  /  CAPTIONS IN THIS SEGMENT",bg=card,fg=muted,
+                 font=("Archivo",9,"bold")).pack(anchor="w",padx=16,pady=(15,5))
         self.caption_list=tk.Listbox(
             right,height=3,bg="#0B111C",fg=white,selectbackground="#075BFF",
             relief="flat",bd=0,font=("Archivo",8),activestyle="none",
@@ -215,8 +220,8 @@ class CompositionReview:
         ).pack(fill="x",padx=16,pady=(5,4),ipady=6)
         self._button(right,"Apply Caption Text",self._apply_caption).pack(anchor="e",padx=16,pady=(0,8))
 
-        tk.Label(right, text="COMPOSITION SETTINGS", bg=card, fg=white,
-                 font=("Archivo", 10)).pack(anchor="w", padx=16, pady=(20, 8))
+        tk.Label(right, text="05  /  COMPOSITION SETTINGS", bg=card, fg=white,
+                 font=("Archivo", 10,"bold")).pack(anchor="w", padx=16, pady=(18, 9))
         self._field(right, "Title", self.title_var)
         self._field(right, "Target Duration (12–180s)", self.target_var)
         tk.Label(right,text="CAPTION EXPORT",bg=card,fg=muted,

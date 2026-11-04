@@ -31,8 +31,8 @@ class ReviewEditor:
         self.app=tk.Tk()
         self.app.title("VAW ClipForge v0.7 | Universal Object Review")
         self.app.configure(bg=COLORS["bg"])
-        self.app.geometry("1360x940")
-        self.app.minsize(1180,820)
+        self.app.geometry("1440x960")
+        self.app.minsize(1120,760)
         self.data=None
         self.capture=None
         self.playing=False
@@ -68,17 +68,22 @@ class ReviewEditor:
 
     def build(self):
         header=tk.Frame(self.app,bg=COLORS["bg"])
-        header.pack(fill="x",padx=21,pady=(14,9))
-        self.label(header,"VAW / REVIEW STUDIO",18,bold=True).pack(side="left")
+        header.pack(fill="x",padx=21,pady=(16,8))
+        identity=tk.Frame(header,bg=COLORS["bg"])
+        identity.pack(side="left",fill="x",expand=True)
+        self.label(identity,"VANITAS STUDIO  /  CREATOR TOOLKIT",8,"sub",bold=True).pack(anchor="w")
+        self.label(identity,"REVIEW STUDIO",19,bold=True).pack(anchor="w",pady=(2,0))
         self.btn(header,"Open Clip",self.browse).pack(side="right",padx=(7,0))
         self.btn(header,"Open Exports",self.open_exports).pack(side="right",padx=(7,0))
         self.save_btn=self.btn(header,"Save Draft",self.save)
         self.save_btn.pack(side="right",padx=(7,0))
         self.export_btn=self.btn(header,"EXPORT EDITED MP4",self.export,important=True)
         self.export_btn.pack(side="right",padx=(7,0))
-        self.file_label=self.label(self.app,"Open a v0.4 ClipForge MP4 with its v04-manifest.json",
-                                   10,"sub",anchor="w")
-        self.file_label.pack(fill="x",padx=22)
+        filebar=tk.Frame(self.app,bg=COLORS["panel"],highlightbackground=COLORS["line"],highlightthickness=1)
+        filebar.pack(fill="x",padx=21,pady=(0,8))
+        self.file_label=tk.Label(filebar,text="Open a ClipForge MP4 export with its manifest",
+            bg=COLORS["panel"],fg=COLORS["sub"],font=("Archivo",9),anchor="w")
+        self.file_label.pack(fill="x",padx=12,pady=9)
 
         body=tk.Frame(self.app,bg=COLORS["bg"])
         body.pack(fill="both",expand=True,padx=20,pady=7)
@@ -92,14 +97,14 @@ class ReviewEditor:
         visuals.pack(fill="x")
         large=tk.Frame(visuals,bg=COLORS["bg"])
         large.pack(side="left",anchor="n")
-        self.label(large,"PORTRAIT CROP PREVIEW",10,"sub",bold=True).pack(anchor="w")
+        self.label(large,"01  /  PORTRAIT OUTPUT",10,"sub",bold=True).pack(anchor="w")
         self.portrait=tk.Canvas(large,width=252,height=448,bg="#0b0d14",
                                 highlightbackground=COLORS["line"],highlightthickness=1)
         self.portrait.pack(pady=(6,0))
         self.portrait_photo=None
         info=tk.Frame(visuals,bg=COLORS["bg"])
         info.pack(side="left",fill="x",anchor="n",padx=(17,0))
-        self.label(info,"SOURCE FRAME (click focus / drag to track object)",10,"sub",bold=True).pack(anchor="w")
+        self.label(info,"02  /  SOURCE FRAME  ·  CLICK TO SET FOCUS",10,"sub",bold=True).pack(anchor="w")
         self.source_preview=tk.Canvas(info,width=450,height=255,bg="#080b11",
                                       highlightbackground=COLORS["line"],highlightthickness=1,
                                       cursor="crosshair")
@@ -150,7 +155,7 @@ class ReviewEditor:
         self.label(left,"Blue = scene | Pink = caption | Yellow = focus | Purple = dip",
                    9,"sub").pack(anchor="w",pady=(5,0))
 
-        self.label(left,"MANUAL FOCUS KEYFRAMES",10,"sub",bold=True).pack(anchor="w",pady=(8,4))
+        self.label(left,"04  /  MANUAL FOCUS KEYFRAMES",10,"sub",bold=True).pack(anchor="w",pady=(10,5))
         keybar=tk.Frame(left,bg=COLORS["bg"])
         keybar.pack(fill="x")
         self.keys=ttk.Treeview(keybar,columns=("time","focus"),show="headings",height=3)
@@ -163,7 +168,7 @@ class ReviewEditor:
         self.btn(keybar,"Reset All",self.reset_focus).pack(side="left")
         self.keys.bind("<Double-1>",self.jump_keyframe)
 
-        self.label(right,"CAPTION TIMELINE",12,bold=True).pack(anchor="w")
+        self.label(right,"03  /  CAPTION TIMELINE",11,bold=True).pack(anchor="w")
         self.label(right,"Select a line → correct text/time → Apply Line",
                    9,"sub").pack(anchor="w",pady=(3,9))
         caption_panel=tk.Frame(right,bg=COLORS["bg"])
