@@ -1,97 +1,128 @@
-# VAW ClipForge v1.2.1 — Vision-Aware Story Editing
+# VAW ClipForge
 
-VAW ClipForge v1.2 builds on the v1.1 local-first desktop editor. It keeps Standalone Highlights and adds two complete Story Composer outputs: Smart Compilation and Narrative Reconstruction. Both story strategies can be enabled together.
+**Turn long-form video into focused vertical content.**
 
-## Vanitas Studio identity
+VAW ClipForge is a Windows desktop application for finding, shaping, and exporting short-form video from longer recordings. It combines local media analysis, AI-assisted editorial understanding, and a reviewable editing workflow to help creators turn source footage into standalone highlights or a connected story.
 
-The desktop interface follows the Vanitas Studio product language: dark, premium, minimal and editorial.
-Archivo is used for functional UI typography; Quantico is reserved for the product wordmark.
-The palette is built around Vanitas Blue, platinum and restrained orange accents.
-See docs/VANITAS_BRAND_UI.md for the full tokens and UI rules.
+Instead of producing a folder of unrelated cuts, ClipForge gives you control over how moments are selected, arranged, captioned, and delivered.
 
-## Windows desktop application
+[**Download for Windows**](https://github.com/VanitasStudio/VAW-ClipForge/releases/latest) · [Report a bug](https://github.com/VanitasStudio/VAW-ClipForge/issues) · [Security policy](SECURITY.md)
 
-The Windows app is packaged as a single-file, windowed executable with the Vanitas app icon and bundled fonts. Build binaries are kept out of the source tree to keep the repository lightweight; attach the executable to a GitHub Release when publishing a desktop version. First-time speech-model use may download the selected Whisper model into the user's Hugging Face cache. The Gemini key remains protected with Windows DPAPI under the current Windows account.
+---
 
-## v1.2 production outputs
+## What you can make
 
-- **Standalone Highlights** — separate vertical clips selected from the strongest complete moments.
-- **Story Composer — Smart Compilation** — a ranked, varied sequence of complete moments.
-- **Story Composer — Narrative Reconstruction** — a coherent sequence that preserves context, prerequisites and payoff.
-- Each Story Composer output is a single rendered vertical MP4 with an editable EDL, analysis bundle and caption sidecars.
-- The target duration is a soft preference. Complete moments are never shortened to force a target; each composition must remain within 12–180 seconds.
-- Smart audio continuity applies short audio crossfades at cuts. Review Studio supports hard cuts and cross-dissolves.
+ClipForge supports three ways to shape source footage. You can use either Story Composer mode on its own or enable both alongside Standalone Highlights.
 
-## Vision Intelligence
+### Standalone Highlights
 
-Video Vision MCP (OAMaestro/video-vision-mcp) is an optional local frame-extraction provider.
+Find strong, self-contained moments and export them as individual vertical clips. Each highlight is treated as its own piece of content, rather than being forced into a larger sequence.
 
-- Uses the MCP extract_frames tool with bounded targeted timestamp sampling. The upstream raw scene mode does not enforce its max_frames parameter, so ClipForge deliberately avoids that mode.
-- Requests at most 8 additional local frames. The existing ClipForge sampler fills sparse coverage, with a maximum of 12 frames per Gemini analysis window.
-- Does not invoke the MCP transcript or Whisper tools. ClipForge's existing local Whisper pipeline remains the only transcript source.
-- Frames are compressed and quality-filtered before they are passed into the existing Gemini visual analysis.
-- A LocalAppData cache is keyed by source path, size, modification time and frame budget, with a 1 GB size cap.
-- The integration is disabled by default. Enable **Extra local frame sampling (Video Vision MCP)** in Smart Processing after installing the optional provider.
+### Story Composer — Smart Compilation
 
-### Install the optional provider
+Build a single vertical video from a selection of strong moments. The composer balances relevance and variety to create a compilation that feels intentional, without requiring every moment to follow a strict narrative order.
 
-The optional provider is maintained separately from the desktop source package. It is disabled by default; the programmatic analyzer can opt in with:
+### Story Composer — Narrative Reconstruction
 
-~~~powershell
-$env:CLIPFORGE_VIDEO_VISION_ENABLED = "1"
-~~~
+Reassemble moments into a coherent sequence. The composer considers context, prerequisites, and payoff so that the finished video is easier to follow as a story—not simply a ranking of the loudest or most visually striking moments.
 
-## Local Performance Engine
+Story Composer exports include an editable edit decision list (EDL) and supporting analysis data, so the composition can be reviewed and revised.
 
-ClipForge profiles the local machine before processing. Whisper uses CUDA only when the full CUDA 12 / cuDNN 9 runtime is available, then falls back automatically to bounded CPU `int8` inference if GPU execution is unavailable. Scene detection uses a reduced sampling rate to avoid decoding every frame, and Story Composer rendering, segment preparation and subtitle burn-in use NVIDIA NVENC when the installed FFmpeg passes a real encoder probe. Otherwise, ClipForge uses the software `libx264` encoder. Processing remains local-first; see [Local Performance](docs/LOCAL_PERFORMANCE.md) for runtime behavior and diagnostics.
+## From source footage to finished video
 
-## Review Studio
+A typical ClipForge session follows this workflow:
 
-- Open **Review / Timeline** after a Story Composer export to open the multi-segment Composition Review Studio.
-- Inspect the horizontal composition timeline and source-frame preview.
-- Change segment order, source in/out points and segment roles.
-- Edit transcript captions, choose caption presets, uppercase/burn-in/SRT settings, hard cuts or cross-dissolves, and smart audio crossfades.
-- Save the EDL and analysis bundle without changing the original source.
-- Render a new revision; existing exports are never overwritten.
+1. **Add source media.** Open a local video or provide a supported public video URL.
+2. **Choose the output.** Select Standalone Highlights, Smart Compilation, Narrative Reconstruction, or a combination.
+3. **Set the format.** Configure vertical output, framing, captions, and the preferred Story Composer duration.
+4. **Analyze the footage.** ClipForge examines speech, scene boundaries, and visual evidence to identify useful moments.
+5. **Review the edit.** Inspect the proposed composition, adjust its sequence and timing, and refine captions and transitions.
+6. **Export.** Render vertical MP4 video and the available supporting files.
 
-## Quick workflow
+The Story Composer duration is a target, not a reason to cut off an important moment. Compositions are kept within the supported 12–180 second range.
 
-1. Choose a local video or a supported public URL.
-2. Set Standalone Highlights and/or the two Story Composer outputs.
-3. Choose the Story Composer target duration (12–180 seconds).
-4. Configure Gemini and confirm the data-sharing prompt.
-5. Optionally enable Video Vision MCP after installing it.
-6. Choose vertical layout, resolution, reframing and caption settings.
-7. Generate, then inspect the outputs in Review / Timeline.
+## Editing and review
 
-## Title & Hashtag Suggestions
+The Review Studio is designed for editorial refinement after a composition has been generated. It is not intended to replace a full non-linear video editor.
 
-Every export run creates one **Title and Hashtag Suggestion.md** file in the export folder, covering each successfully rendered standalone clip and each Story Composer segment.
+Depending on the output, you can:
 
-- Three short title options are generated per clip, with one recommended title.
-- Five to eight relevant hashtags are suggested per clip.
-- Suggestions use only that clip's topic, editorial notes and matching transcript excerpt.
-- Gemini is used when available in the already-enabled AI workflow. If title generation fails or the run is offline, a local fallback still writes the Markdown report.
-- The report is a suggestion, not an automatic publish action. Review titles and claims before posting.
+- Review the sequence on a multi-segment timeline.
+- Reorder segments and adjust source in/out points.
+- Change segment roles and refine the structure of a story.
+- Correct transcript captions and configure caption presentation.
+- Choose hard cuts or cross-dissolves, with smart audio continuity for supported compositions.
+- Save an editable draft and render a new revision without overwriting the previous export.
 
-## Repository layout
+ClipForge keeps the original source media intact. Review changes are applied to a new output.
 
-- `clipforge/` — application modules and processing engines.
-- `assets/` — bundled product identity, fonts and runtime assets.
-- `docs/` — product, architecture, security and performance documentation.
-- `.github/` — issue templates, pull-request template and static validation workflow.
+## Local processing and AI assistance
 
-Generated binaries, local model caches, development utilities and historical patch scripts are intentionally excluded from the public source tree. See `docs/REPOSITORY_STRUCTURE.md` and `RELEASE_NOTES.md` for project documentation.
+ClipForge is built around a local-first workflow. Media handling and core analysis run on your Windows machine, with optional AI assistance for higher-level editorial interpretation.
 
-## Privacy and safety
+- **Local speech transcription:** Whisper processes source audio locally.
+- **Scene analysis:** Scene boundaries are detected locally to help identify meaningful visual changes.
+- **Visual context:** Selected frames can be used to provide additional context during editorial analysis.
+- **Optional Gemini assistance:** When enabled, Gemini can help interpret selected audio and visual evidence and support editorial suggestions.
+- **Hardware-aware rendering:** ClipForge checks whether NVIDIA hardware encoding is usable and falls back to software encoding when it is not.
+- **CPU fallback:** If the required CUDA runtime is unavailable, speech transcription can use CPU inference instead.
 
-- Original media, Whisper transcription and boundary alignment stay local.
-- Video Vision MCP receives only a local file path and writes bounded frame images to a temporary local directory. It does not receive an online URL, cookies or API key from ClipForge.
-- The MCP integration uses frame extraction only; it does not upload media or run its own transcript/AI pipeline.
-- Gemini receives compressed audio and selected sparse frames only after the user confirms. Full video and full transcript are not sent.
-- If the optional provider is missing or fails, ClipForge falls back to its built-in local frame sampler.
-- No automatic publishing. Use only content you own or have permission to repurpose.
+AI assistance is optional. The application retains a local processing path when cloud assistance is not enabled or available. Processing speed depends on source media, model selection, and the capabilities of the computer.
 
-## Validation
+## Titles and hashtags
 
-GitHub Actions runs Python bytecode compilation against the application package on pushes and pull requests. Maintainer-only runtime and rendering checks are performed on Windows before publishing a desktop build.
+ClipForge can prepare a Markdown suggestion sheet alongside an export. It contains title options and relevant hashtags for the generated clips, giving you a starting point for publishing.
+
+These are editorial suggestions—not automatic publishing. Review titles, hashtags, and any factual claims before using them.
+
+## Privacy
+
+Your source footage and full transcript are not sent to Gemini.
+
+When Gemini assistance is enabled and you confirm the data-sharing prompt, ClipForge sends selected, compressed audio and sparse frame images for analysis. The full source video and full transcript remain on your device.
+
+The optional Video Vision integration is used for bounded local frame extraction. It does not replace ClipForge's transcription pipeline or independently upload your source media.
+
+ClipForge does not publish content to social platforms automatically. Only process media you own or have permission to use.
+
+For vulnerability reporting and security expectations, see [SECURITY.md](SECURITY.md).
+
+## Getting started
+
+1. Open the [latest Windows release](https://github.com/VanitasStudio/VAW-ClipForge/releases/latest).
+2. Download the available ClipForge executable from the release assets.
+3. Run the application on Windows.
+4. Select your source video and choose the output workflow that fits your edit.
+5. Review the generated results before publishing.
+
+The first use of a selected Whisper model may require an internet connection to download the model files. Gemini features require the user's own API configuration and explicit opt-in.
+
+## System requirements
+
+- **Operating system:** Windows 10 or Windows 11, 64-bit.
+- **Processor:** A modern multi-core CPU.
+- **Memory:** 8 GB RAM minimum; 16 GB or more recommended for longer or higher-resolution footage.
+- **Graphics:** NVIDIA GPU is optional. Compatible NVIDIA hardware can accelerate supported encoding workloads.
+- **Storage:** Free space for source media, model files, temporary processing data, and exported videos.
+- **Network:** Required for downloading model files, accessing supported public video URLs, and using optional Gemini services.
+
+Actual performance varies with video resolution, codec, duration, model choice, and available hardware.
+
+## Project structure
+
+- `clipforge/` — application and media-processing modules.
+- `assets/` — application identity, fonts, and bundled resources.
+- `docs/` — focused technical and product documentation.
+- `.github/` — repository templates and automation.
+
+The README describes the product and its user-facing workflows. Release-specific changes and build availability are maintained separately on the [Releases page](https://github.com/VanitasStudio/VAW-ClipForge/releases).
+
+## About
+
+VAW ClipForge is developed by **Vanitas Studio**.
+
+The application uses a dark, restrained workspace with metallic silver typography and electric-blue accents—built to keep attention on the footage and the edit.
+
+---
+
+**Have feedback or found a problem?** Open an issue on the [GitHub repository](https://github.com/VanitasStudio/VAW-ClipForge/issues).
